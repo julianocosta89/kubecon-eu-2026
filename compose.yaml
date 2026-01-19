@@ -33,7 +33,7 @@ services:
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=songs_db
     volumes:
-      - ./songs-db/init-songs-db.sh:/docker-entrypoint-initdb.d/init-songs-db.sh
+      - ./src/songs-db/init-songs-db.sh:/docker-entrypoint-initdb.d/init-songs-db.sh
     profiles:
       - auto
       - express-auto
