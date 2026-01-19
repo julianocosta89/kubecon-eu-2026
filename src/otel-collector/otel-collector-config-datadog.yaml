@@ -1,0 +1,78 @@
+extensions:
+  healthcheckv2:
+    use_v2: true
+    component_health:
+      include_permanent_errors: false
+      include_recoverable_errors: true
+      recovery_duration: 5m
+    http:
+      endpoint: "localhost:13133"
+      status:
+        enabled: true
+        path: "/health/status"
+  datadog/extension:
+    api:
+      site: ${DD_SITE_PARAMETER}
+      key: ${DD_API_KEY}
+    http:
+      endpoint: "localhost:9875"
+      path: "/metadata"
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: ${env:OTEL_COLLECTOR_HOST}:${env:OTEL_COLLECTOR_PORT_GRPC}
+      http:
+        endpoint: ${env:OTEL_COLLECTOR_HOST}:${env:OTEL_COLLECTOR_PORT_HTTP}
+
+processors:
+  batch: {}
+  filter/ottl:
+    error_mode: ignore
+    traces:
+      span:
+        - IsMatch(instrumentation_scope.name, "@opentelemetry/instrumentation-net")
+        - IsMatch(instrumentation_scope.name, "@opentelemetry/instrumentation-dns")
+        # - IsMatch(instrumentation_scope.name, "@opentelemetry/instrumentation-express")
+  resource:
+    attributes:
+      - key: deployment.environment.name
+        value: "dev"
+        action: upsert
+
+connectors:
+  datadog/connector:
+    traces:
+      compute_stats_by_span_kind: true
+
+exporters:
+  debug:
+  # verbosity: detailed
+  datadog:
+    traces:
+      compute_stats_by_span_kind: true
+    api:
+      site: ${DD_SITE_PARAMETER}
+      key: ${DD_API_KEY}
+  otlp:
+    endpoint: "jaeger:4317"
+    tls:
+      insecure: true
+
+
+service:
+  extensions: [healthcheckv2, datadog/extension]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [resource, batch]
+      exporters: [debug, datadog/connector, datadog, otlp]
+    metrics:
+      receivers: [otlp, datadog/connector]
+      processors: [resource, batch]
+      exporters: [datadog]
+    logs:
+      receivers: [otlp]
+      processors: [resource, batch]
+      exporters: [datadog]

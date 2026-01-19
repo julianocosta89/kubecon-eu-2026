@@ -1,0 +1,58 @@
+extensions:
+  healthcheckv2:
+    use_v2: true
+    component_health:
+      include_permanent_errors: false
+      include_recoverable_errors: true
+      recovery_duration: 5m
+    http:
+      endpoint: "localhost:13133"
+      status:
+        enabled: true
+        path: "/health/status"
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: ${env:OTEL_COLLECTOR_HOST}:${env:OTEL_COLLECTOR_PORT_GRPC}
+      http:
+        endpoint: ${env:OTEL_COLLECTOR_HOST}:${env:OTEL_COLLECTOR_PORT_HTTP}
+
+processors:
+  batch: {}
+  filter/ottl:
+    error_mode: ignore
+    traces:
+      span:
+        - IsMatch(instrumentation_scope.name, "@opentelemetry/instrumentation-net")
+        - IsMatch(instrumentation_scope.name, "@opentelemetry/instrumentation-dns")
+  resource:
+    attributes:
+      - key: deployment.environment.name
+        value: "dev"
+        action: upsert
+
+exporters:
+  debug:
+#   verbosity: detailed
+  otlp:
+    endpoint: "jaeger:4317"
+    tls:
+      insecure: true
+
+service:
+  extensions: [healthcheckv2]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [filter/ottl, resource, batch]
+      exporters: [debug, otlp]
+    metrics:
+      receivers: [otlp]
+      processors: [filter/ottl, resource, batch]
+      exporters: [debug, otlp]
+    logs:
+      receivers: [otlp]
+      processors: [filter/ottl, resource, batch]
+      exporters: [debug, otlp]

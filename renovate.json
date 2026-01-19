@@ -1,0 +1,117 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "labels": [
+    "dependencies"
+  ],
+  "assigneesFromCodeOwners": true,
+  "reviewersFromCodeOwners": true,
+  "packageRules": [
+    {
+      "matchCategories": [
+        "docker"
+      ],
+      "enabled": true,
+      "pinDigests": false
+    },
+    {
+      "description": "Group all Docker base images together",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "node",
+        "openjdk",
+        "golang",
+        "alpine",
+        "postgres"
+      ],
+      "groupName": "Docker base images"
+    },
+    {
+      "description": "Keep Docker images on LTS versions where applicable",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "node"
+      ],
+      "allowedVersions": "/^\\d+\\.(\\d*[02468]\\.\\d+|0\\.0)/"
+    },
+    {
+      "description": "Keep Java runtime on LTS versions only",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "openjdk"
+      ],
+      "allowedVersions": "/^(8|11|17|21|25)(-.*)?$/"
+    },
+    {
+      "description": "Group Java/Gradle dependencies together",
+      "matchDatasources": [
+        "gradle"
+      ],
+      "groupName": "Java dependencies"
+    },
+    {
+      "groupName": "OpenTelemetry Collector Builder",
+      "matchPackageNames": [
+        "/^go\\.opentelemetry\\.io/collector//",
+        "/^github\\.com/open-telemetry/opentelemetry-collector-contrib//",
+        "/open-telemetry/opentelemetry-collector-releases/"
+      ]
+    },
+    {
+      "description": "Group npm dependencies together",
+      "matchDatasources": [
+        "npm"
+      ],
+      "matchFileNames": [
+        "src/express-auto/**"
+      ],
+      "groupName": "npm dependencies"
+    }
+  ],
+  "ocb": {
+    "enabled": true,
+    "managerFilePatterns": [
+      "src/otel-collector/ocb-manifest.yaml"
+    ],
+    "bumpVersion": "minor"
+  },
+  "npm": {
+    "enabled": true
+  },
+  "gradle": {
+    "enabled": true
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Update OpenTelemetry Collector Builder version in Dockerfile",
+      "managerFilePatterns": [
+        "src/otel-collector/Dockerfile/"
+      ],
+      "matchStrings": [
+        "ARG BUILDER_VERSION=(?<currentValue>.*?)\\n"
+      ],
+      "depNameTemplate": "cmd/builder",
+      "packageNameTemplate": "open-telemetry/opentelemetry-collector-releases",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^cmd/builder/v(?<version>.*)$"
+    }
+  ],
+  "dependencyDashboard": true,
+  "dependencyDashboardAutoclose": true,
+  "osvVulnerabilityAlerts": true,
+  "platformAutomerge": false,
+  "prHourlyLimit": 5,
+  "prConcurrentLimit": 10,
+  "rebaseWhen": "behind-base-branch",
+  "semanticCommits": "enabled",
+  "gitAuthor": "renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>"
+}

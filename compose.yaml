@@ -1,0 +1,98 @@
+networks:
+  default:
+    name: kubecon-eu-2026
+    driver: bridge
+
+services:
+  songs-auto:
+    build:
+      context: ./src/auto
+    ports:
+      - 8080:8080
+    environment:
+      - MUSIC_SERVICE_URL=https://musicbrainz.org/ws/2/recording/
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+      - OTEL_SERVICE_NAME=songs-auto
+      - OTEL_RESOURCE_ATTRIBUTES=service.version=0.0.1
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://songs-db:5432/songs_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_DATASOURCE_DRIVER-CLASS-NAME=org.postgresql.Driver
+    depends_on:
+      otel-collector:
+        condition: service_healthy
+    profiles:
+      - auto
+
+  songs-db:
+    image: postgres:18.1-alpine3.22
+    ports:
+      - 5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=songs_db
+    volumes:
+      - ./songs-db/init-songs-db.sh:/docker-entrypoint-initdb.d/init-songs-db.sh
+    profiles:
+      - auto
+      - express-auto
+  
+  express-auto:
+    build:
+      context: ./src/express-auto
+    ports:
+      - 3000:3000
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+      - OTEL_SERVICE_NAME=express-auto
+      - OTEL_RESOURCE_ATTRIBUTES=service.version=0.1.0
+      - DB_HOST=songs-db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - DB_NAME=songs_db
+      - MUSIC_SERVICE_URL=https://musicbrainz.org/ws/2/recording/
+    depends_on:
+      otel-collector:
+        condition: service_healthy
+    profiles:
+      - express-auto
+
+  jaeger:
+    image: cr.jaegertracing.io/jaegertracing/jaeger:2.14.1
+    ports:
+      - 16686:16686
+      - 4317
+      - 4318
+    profiles:
+      - auto
+      - express-auto
+
+  otel-collector:
+    build:
+      context: ./src/otel-collector
+    command: 
+      - --config=/etc/otel-collector-config.yaml
+    volumes:
+      - ./src/otel-collector/otel-collector-config${OBSERVABILITY_BACKEND:+}-${OBSERVABILITY_BACKEND}.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - 4317 # OTLP gRPC
+      - 4318 # OTLP HTTP
+      - 13133 # Health check HTTP
+    environment:
+      - OBSERVABILITY_BACKEND
+      - OTEL_COLLECTOR_HOST=otel-collector
+      - OTEL_COLLECTOR_PORT_GRPC=4317
+      - OTEL_COLLECTOR_PORT_HTTP=4318
+      - DD_SITE_PARAMETER
+      - DD_API_KEY
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:13133/health/status"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+    profiles:
+      - auto
+      - express-auto
