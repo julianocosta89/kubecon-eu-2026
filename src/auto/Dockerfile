@@ -1,5 +1,5 @@
 # Build stage
-FROM gradle:9.3-jdk21 AS build
+FROM gradle:9.3-jdk25 AS build
 WORKDIR /app
 COPY gradle/ gradle/
 COPY gradlew build.gradle settings.gradle ./
@@ -9,7 +9,7 @@ RUN ./gradlew build --no-daemon
 
 
 # Runtime stage
-FROM eclipse-temurin:25.0.1_8-jre-alpine-3.22
+FROM eclipse-temurin:25.0.1_8-jre-alpine-3.23
 
 RUN addgroup --system app && adduser --system --ingroup app app
 WORKDIR /app
