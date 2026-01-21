@@ -55,7 +55,7 @@ exporters:
     api:
       site: ${DD_SITE_PARAMETER}
       key: ${DD_API_KEY}
-  otlp:
+  otlp_grpc:
     endpoint: "jaeger:4317"
     tls:
       insecure: true
@@ -67,7 +67,7 @@ service:
     traces:
       receivers: [otlp]
       processors: [resource, batch]
-      exporters: [debug, datadog/connector, datadog, otlp]
+      exporters: [debug, datadog/connector, datadog, otlp_grpc]
     metrics:
       receivers: [otlp, datadog/connector]
       processors: [resource, batch]

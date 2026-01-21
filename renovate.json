@@ -94,7 +94,7 @@
       "customType": "regex",
       "description": "Update OpenTelemetry Collector Builder version in Dockerfile",
       "managerFilePatterns": [
-        "src/otel-collector/Dockerfile/"
+        "src/otel-collector/Dockerfile"
       ],
       "matchStrings": [
         "ARG BUILDER_VERSION=(?<currentValue>.*?)\\n"

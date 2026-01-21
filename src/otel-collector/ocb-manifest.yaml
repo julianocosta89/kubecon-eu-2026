@@ -2,7 +2,7 @@ dist:
   module: github.com/julianocosta89/smells-like-clean-telemetry/dist/otel-collector
   name: otelcol
   description: Custom OpenTelemetry Collector
-  version: 0.143.0
+  version: 0.144.0
   output_path: ./_build
 
 extensions:

@@ -36,7 +36,7 @@ processors:
 exporters:
   debug:
 #   verbosity: detailed
-  otlp:
+  otlp_grpc:
     endpoint: "jaeger:4317"
     tls:
       insecure: true
@@ -47,12 +47,12 @@ service:
     traces:
       receivers: [otlp]
       processors: [filter/ottl, resource, batch]
-      exporters: [debug, otlp]
+      exporters: [debug, otlp_grpc]
     metrics:
       receivers: [otlp]
       processors: [filter/ottl, resource, batch]
-      exporters: [debug, otlp]
+      exporters: [debug]
     logs:
       receivers: [otlp]
       processors: [filter/ottl, resource, batch]
-      exporters: [debug, otlp]
+      exporters: [debug]
