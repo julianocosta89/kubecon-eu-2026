@@ -6,8 +6,8 @@
     "@opentelemetry/sdk-node": "0.211.0",
     "express": "5.2.1",
     "helmet": "8.1.0",
-    "pg": "8.17.2",
-    "pino": "10.2.1",
+    "pg": "8.18.0",
+    "pino": "10.3.0",
     "pino-opentelemetry-transport": "2.0.0"
   }
 }
