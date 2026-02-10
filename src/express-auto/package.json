@@ -7,7 +7,7 @@
     "express": "5.2.1",
     "helmet": "8.1.0",
     "pg": "8.18.0",
-    "pino": "10.3.0",
+    "pino": "10.3.1",
     "pino-opentelemetry-transport": "2.0.0"
   }
 }
