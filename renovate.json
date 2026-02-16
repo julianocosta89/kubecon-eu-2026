@@ -51,9 +51,14 @@
       "allowedVersions": "/^(8|11|17|21|25)(-.*)?$/"
     },
     {
-      "description": "Group Java/Gradle dependencies together",
+      "description": "Group all Java/Gradle dependencies together",
       "matchDatasources": [
         "gradle"
+      ],
+      "matchFileNames": [
+        "src/auto-instrumentation/spring-auto/**",
+        "src/manual-instrumentation/spring-manual/**",
+        "src/uninstrumented/spring-uninstrumented/**"
       ],
       "groupName": "Java dependencies"
     },
@@ -66,12 +71,14 @@
       ]
     },
     {
-      "description": "Group npm dependencies together",
+      "description": "Group all Node.js/npm dependencies together",
       "matchDatasources": [
         "npm"
       ],
       "matchFileNames": [
-        "src/express-auto/**"
+        "src/auto-instrumentation/express-auto/**",
+        "src/manual-instrumentation/express-manual/**",
+        "src/uninstrumented/express-uninstrumented/**"
       ],
       "groupName": "npm dependencies"
     }
