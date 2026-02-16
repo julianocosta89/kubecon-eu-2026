@@ -20,13 +20,6 @@ receivers:
         endpoint: ${env:OTEL_COLLECTOR_HOST}:${env:OTEL_COLLECTOR_PORT_HTTP}
 
 processors:
-  batch: {}
-  filter/ottl:
-    error_mode: ignore
-    traces:
-      span:
-        - IsMatch(instrumentation_scope.name, "@opentelemetry/instrumentation-net")
-        - IsMatch(instrumentation_scope.name, "@opentelemetry/instrumentation-dns")
   resource:
     attributes:
       - key: deployment.environment.name
@@ -36,23 +29,25 @@ processors:
 exporters:
   debug:
 #   verbosity: detailed
-  otlp_grpc:
-    endpoint: "jaeger:4317"
+  otlp_grpc/jaeger:
+    endpoint: "http://jaeger:4317"
     tls:
       insecure: true
+    sending_queue:
+      batch:
 
 service:
   extensions: [healthcheckv2]
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [filter/ottl, resource, batch]
-      exporters: [debug, otlp_grpc]
+      processors: [resource]
+      exporters: [debug, otlp_grpc/jaeger]
     metrics:
       receivers: [otlp]
-      processors: [filter/ottl, resource, batch]
+      processors: [resource]
       exporters: [debug]
     logs:
       receivers: [otlp]
-      processors: [filter/ottl, resource, batch]
+      processors: [resource]
       exporters: [debug]

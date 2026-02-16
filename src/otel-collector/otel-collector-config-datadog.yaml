@@ -27,14 +27,6 @@ receivers:
         endpoint: ${env:OTEL_COLLECTOR_HOST}:${env:OTEL_COLLECTOR_PORT_HTTP}
 
 processors:
-  batch: {}
-  filter/ottl:
-    error_mode: ignore
-    traces:
-      span:
-        - IsMatch(instrumentation_scope.name, "@opentelemetry/instrumentation-net")
-        - IsMatch(instrumentation_scope.name, "@opentelemetry/instrumentation-dns")
-        # - IsMatch(instrumentation_scope.name, "@opentelemetry/instrumentation-express")
   resource:
     attributes:
       - key: deployment.environment.name
@@ -55,10 +47,17 @@ exporters:
     api:
       site: ${DD_SITE_PARAMETER}
       key: ${DD_API_KEY}
-  otlp_grpc:
-    endpoint: "jaeger:4317"
+    sending_queue:
+      batch:
+        min_size: 10
+        max_size: 100
+        flush_timeout: 10s
+  otlp_grpc/jaeger:
+    endpoint: "http://jaeger:4317"
     tls:
       insecure: true
+    sending_queue:
+      batch:
 
 
 service:
@@ -66,13 +65,13 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [resource, batch]
-      exporters: [debug, datadog/connector, datadog, otlp_grpc]
+      processors: [resource]
+      exporters: [debug, datadog/connector, datadog, otlp_grpc/jaeger]
     metrics:
       receivers: [otlp, datadog/connector]
-      processors: [resource, batch]
+      processors: [resource]
       exporters: [datadog]
     logs:
       receivers: [otlp]
-      processors: [resource, batch]
+      processors: [resource]
       exporters: [datadog]
