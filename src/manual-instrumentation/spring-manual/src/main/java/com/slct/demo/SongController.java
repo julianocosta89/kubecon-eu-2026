@@ -1,6 +1,5 @@
 package com.slct.demo;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,42 +14,60 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.semconv.HttpAttributes;
+import io.opentelemetry.semconv.UrlAttributes;
+import io.opentelemetry.semconv.ServerAttributes;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.context.Scope;
+import io.opentelemetry.api.common.AttributeKey;
+import io.opentelemetry.api.common.Attributes;
+
 @RestController
 public class SongController {
 
-    @Autowired
-    private SongService songService;
-    
+    private final SongService songService;
+    private final Tracer tracer;
+
     @Value("${MUSIC_SERVICE_URL:https://musicbrainz.org/ws/2/recording/}")
     private String musicServiceUrl;
-    
+
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
     private static final Logger logger = LoggerFactory.getLogger(SongController.class);
 
-    @GetMapping("/songs/{title}/{artist}")
-    public String getSongs(@PathVariable String title, @PathVariable String artist) {        
-        Song song = songService.getSongFromDatabase(title, artist);
+    public SongController(SongService songService, Tracer tracer) {
+        this.songService = songService;
+        this.tracer = tracer;
+    }
 
-        if (song != null) {
-            return String.format("{\"title\":\"%s\",\"artist\":\"%s\",\"album\":\"%s\",\"year\":%s,\"duration_ms\":%s,\"genre\":\"%s\"}", 
-                               song.getTitle(), song.getArtist(), song.getAlbum(), song.getYear(), song.getDurationMs(), song.getGenre());
-        } else {
-            try {
-                String url = String.format("%s?query=recording:\"%s\" AND artist:\"%s\"&fmt=json&limit=20", 
-                    musicServiceUrl, title, artist);
-                HttpHeaders headers = new HttpHeaders();
-                headers.set("User-Agent", "otel-demo/1.0");
-                
-                HttpEntity<String> entity = new HttpEntity<>(headers);
-                ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
-                
-                // Parse the JSON response and save to database
+    @GetMapping("/songs/{title}/{artist}")
+    public String getSongs(@PathVariable String title, @PathVariable String artist) {
+        Span span = tracer.spanBuilder("GET /songs/{title}/{artist}")
+                .setSpanKind(SpanKind.SERVER)
+                .setAllAttributes(Attributes.of(
+                    HttpAttributes.HTTP_REQUEST_METHOD, HttpAttributes.HttpRequestMethodValues.GET,
+                    HttpAttributes.HTTP_ROUTE, "/songs/{title}/{artist}",
+                    AttributeKey.stringKey("song.title"), title,
+                    AttributeKey.stringKey("song.artist"), artist
+                ))
+                .startSpan();
+
+        try (Scope scope = span.makeCurrent()) {
+            Song song = songService.getSongFromDatabase(title, artist);
+
+            if (song != null) {
+                span.setAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, 200L);
+                return String.format("{\"title\":\"%s\",\"artist\":\"%s\",\"album\":\"%s\",\"year\":%s,\"duration_ms\":%s,\"genre\":\"%s\"}",
+                        song.getTitle(), song.getArtist(), song.getAlbum(), song.getYear(), song.getDurationMs(), song.getGenre());
+            } else {
                 try {
-                    JsonNode jsonNode = objectMapper.readTree(response.getBody());
+                    String responseBody = callMusicBrainzApi(title, artist);
+                    JsonNode jsonNode = objectMapper.readTree(responseBody);
                     JsonNode recordings = jsonNode.get("recordings");
                     if (recordings != null && recordings.isArray() && recordings.size() > 0) {
-                        
                         // Find the best recording - prioritize studio albums over live recordings
                         JsonNode bestRecording = null;
                         Integer bestYear = null;
@@ -73,8 +90,8 @@ public class SongController {
                                             // Check if this is likely a studio album (not live/compilation)
                                             String albumTitle = release.has("title") ? release.get("title").asText().toLowerCase() : "";
                                             boolean isLive = albumTitle.contains("live") || albumTitle.contains("concert") || 
-                                                           albumTitle.contains("stage") || albumTitle.contains("tour") ||
-                                                           releaseDate.matches(".*\\d{4}-\\d{2}-\\d{2}.*"); // Specific dates often indicate live shows
+                                                        albumTitle.contains("stage") || albumTitle.contains("tour") ||
+                                                        releaseDate.matches(".*\\d{4}-\\d{2}-\\d{2}.*"); // Specific dates often indicate live shows
                                             
                                             if (!isLive) {
                                                 hasStudioRelease = true;
@@ -94,7 +111,7 @@ public class SongController {
                                 } else if (!foundStudioAlbum && hasStudioRelease) {
                                     shouldUpdate = true; // First studio release found
                                 } else if (foundStudioAlbum == hasStudioRelease && earliestYear != null && 
-                                          (bestYear == null || earliestYear < bestYear)) {
+                                        (bestYear == null || earliestYear < bestYear)) {
                                     shouldUpdate = true; // Same type but earlier year
                                 }
                                 
@@ -128,8 +145,8 @@ public class SongController {
                                     String albumTitle = release.has("title") ? release.get("title").asText().toLowerCase() : "";
                                     
                                     boolean isLive = albumTitle.contains("live") || albumTitle.contains("concert") || 
-                                                   albumTitle.contains("stage") || albumTitle.contains("tour") ||
-                                                   releaseDate.matches(".*\\d{4}-\\d{2}-\\d{2}.*");
+                                                albumTitle.contains("stage") || albumTitle.contains("tour") ||
+                                                releaseDate.matches(".*\\d{4}-\\d{2}-\\d{2}.*");
                                     
                                     boolean shouldUpdate = false;
                                     if (bestRelease == null) {
@@ -137,7 +154,7 @@ public class SongController {
                                     } else if (!foundStudioRelease && !isLive) {
                                         shouldUpdate = true; // First studio release found
                                     } else if (foundStudioRelease == !isLive && releaseYear != null && 
-                                              (bestReleaseYear == null || releaseYear < bestReleaseYear)) {
+                                            (bestReleaseYear == null || releaseYear < bestReleaseYear)) {
                                         shouldUpdate = true; // Same type but earlier year
                                     }
                                     
@@ -176,33 +193,81 @@ public class SongController {
                                 }
                             }
                         }
-                        
-                        // Save to database
-                        Song savedSong = songService.saveSong(title, artist, album, year, durationMs, genre);
-                        
-                        return String.format("{\"title\":\"%s\",\"artist\":\"%s\",\"album\":\"%s\",\"year\":%s,\"duration_ms\":%s,\"genre\":\"%s\"}", 
-                                           savedSong.getTitle(), savedSong.getArtist(), savedSong.getAlbum(), savedSong.getYear(), savedSong.getDurationMs(), savedSong.getGenre());
+
+                        try {
+                            // Save to database
+                            Song savedSong = songService.saveSong(title, artist, album, year, durationMs, genre);
+
+                            span.setAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, 200L);
+                            return String.format("{\"title\":\"%s\",\"artist\":\"%s\",\"album\":\"%s\",\"year\":%s,\"duration_ms\":%s,\"genre\":\"%s\"}",
+                                    savedSong.getTitle(), savedSong.getArtist(), savedSong.getAlbum(), savedSong.getYear(), savedSong.getDurationMs(), savedSong.getGenre());
+                        } catch (Exception e) {
+                            // Return basic song info even if saving fails
+                            span.setAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, 200L);
+                            return String.format("{\"title\":\"%s\",\"artist\":\"%s\",\"album\":\"%s\",\"year\":%s,\"duration_ms\":%s,\"genre\":\"%s\"}",
+                                    title, artist, album, year, durationMs, genre);
+                        }
                     } else {
-                        return String.format("{\"message\":\"Song not found for title: %s, artist: %s\"}", 
-                                           title, artist);
+                        span.setAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, 404L);
+                        return String.format("{\"message\":\"Song not found for title: %s, artist: %s\"}",
+                                title, artist);
                     }
                 } catch (Exception e) {
-                    // Return basic song info even if saving fails
-                    return String.format("{\"title\":\"%s\",\"artist\":\"%s\",\"album\":\"Unknown\",\"year\":null,\"duration_ms\":null,\"genre\":\"Unknown\"}", 
-                                       title, artist);
+                    span.recordException(e);
+                    span.setStatus(StatusCode.ERROR);
+                    span.setAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, 500L);
+                    return String.format("{\"message\":\"Song not found for title: %s, artist: %s\"}",
+                                title, artist);
                 }
-            } catch (Exception e) {
-                return String.format("{\"error\":\"Song not found for title: %s, artist: %s, external service error: %s\"}", 
-                                   title, artist, e.getMessage());
             }
+        } catch (Exception e) {
+            span.recordException(e);
+            span.setStatus(StatusCode.ERROR);
+            span.setAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, 500L);
+            return String.format("{\"error\":\"Song not found for title: %s, artist: %s\"}",
+                            title, artist);
+        } finally {
+            span.end();
         }
     }
     
+    private String callMusicBrainzApi(String title, String artist) {
+        String url = String.format("%s?query=recording:\"%s\" AND artist:\"%s\"&fmt=json&limit=20",
+                musicServiceUrl, title, artist);
+
+        // Create HTTP client span for external API call - span name should be HTTP {method} format
+        Span span = tracer.spanBuilder("GET")
+                .setSpanKind(SpanKind.CLIENT)
+                .setAllAttributes(Attributes.of(
+                    HttpAttributes.HTTP_REQUEST_METHOD, HttpAttributes.HttpRequestMethodValues.GET,
+                    UrlAttributes.URL_FULL, url,
+                    ServerAttributes.SERVER_ADDRESS, "musicbrainz.org",
+                    ServerAttributes.SERVER_PORT, 443L))
+                .startSpan();
+
+        try (Scope scope = span.makeCurrent()) {
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("User-Agent", "otel-demo/1.0");
+
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
+
+            span.setAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, (long) response.getStatusCode().value());
+            return response.getBody();
+        } catch (Exception e) {
+            span.recordException(e);
+            span.setStatus(StatusCode.ERROR);
+            throw e;
+        } finally {
+            span.end();
+        }
+    }
+
     private Integer extractYear(String dateString) {
         if (dateString == null || dateString.trim().isEmpty()) {
             return null;
         }
-        
+
         try {
             // Handle various date formats: YYYY, YYYY-MM, YYYY-MM-DD
             String[] parts = dateString.split("-");
@@ -212,7 +277,7 @@ public class SongController {
         } catch (NumberFormatException e) {
             logger.debug("Could not parse year from date string: {}", dateString);
         }
-        
+
         return null;
     }
 }

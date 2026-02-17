@@ -9,8 +9,8 @@ import java.util.Optional;
 
 @Repository
 public interface SongRepository extends JpaRepository<Song, Long> {
-    
-    @Query("SELECT s FROM Song s WHERE LOWER(s.title) = LOWER(:title) AND LOWER(s.artist) = LOWER(:artist)")
-    Optional<Song> findByTitleAndArtistIgnoreCase(@Param("title") String title, @Param("artist") String artist);
-    
+    String FIND_BY_TITLE_AND_ARTIST_QUERY = "SELECT s FROM Song s WHERE LOWER(s.title) = LOWER(:title) AND LOWER(s.artist) = LOWER(:artist)";
+
+    @Query(FIND_BY_TITLE_AND_ARTIST_QUERY)
+    Optional<Song> findByTitleAndArtistIgnoreCase(@Param("title") String title, @Param("artist") String artist);    
 } 
