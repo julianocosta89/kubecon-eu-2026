@@ -43,11 +43,3 @@ service:
       receivers: [otlp]
       processors: [resource]
       exporters: [debug, otlp_grpc/jaeger]
-    metrics:
-      receivers: [otlp]
-      processors: [resource]
-      exporters: [debug]
-    logs:
-      receivers: [otlp]
-      processors: [resource]
-      exporters: [debug]
