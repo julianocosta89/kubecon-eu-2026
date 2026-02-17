@@ -1,0 +1,33 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '4.0.2'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.slct'
+version = '0.0.1'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(25)
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'com.fasterxml.jackson.core:jackson-databind'
+
+	implementation platform('io.opentelemetry:opentelemetry-bom:1.59.0')
+	implementation 'io.opentelemetry:opentelemetry-api'
+	implementation 'io.opentelemetry:opentelemetry-sdk'
+	implementation 'io.opentelemetry:opentelemetry-sdk-extension-autoconfigure'
+	implementation 'io.opentelemetry:opentelemetry-exporter-otlp'
+	implementation 'io.opentelemetry.semconv:opentelemetry-semconv:1.39.0'
+
+	runtimeOnly 'org.postgresql:postgresql:42.7.9'
+}

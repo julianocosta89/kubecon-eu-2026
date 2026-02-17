@@ -4,9 +4,12 @@ networks:
     driver: bridge
 
 services:
+  # =============================================================================
+  # Auto-instrumented services
+  # =============================================================================
   songs-spring-auto:
     build:
-      context: ./src/spring-auto
+      context: ./src/auto-instrumentation/spring-auto
     ports:
       - 8080:8080
     environment:
@@ -14,6 +17,8 @@ services:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
       - OTEL_SERVICE_NAME=songs-spring-auto
       - OTEL_RESOURCE_ATTRIBUTES=service.version=0.0.1
+      - OTEL_METRICS_EXPORTER=none
+      - OTEL_LOGS_EXPORTER=none
       - SPRING_DATASOURCE_URL=jdbc:postgresql://songs-db:5432/songs_db
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=password
@@ -21,9 +26,131 @@ services:
     depends_on:
       otel-collector:
         condition: service_healthy
+      songs-db:
+        condition: service_started
     profiles:
+      - auto
       - spring-auto
 
+  songs-express-auto:
+    build:
+      context: ./src/auto-instrumentation/express-auto
+    ports:
+      - 3000:3000
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+      - OTEL_SERVICE_NAME=songs-express-auto
+      - OTEL_RESOURCE_ATTRIBUTES=service.version=0.0.1
+      - DB_HOST=songs-db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - DB_NAME=songs_db
+      - MUSIC_SERVICE_URL=https://musicbrainz.org/ws/2/recording/
+    depends_on:
+      otel-collector:
+        condition: service_healthy
+      songs-db:
+        condition: service_started
+    profiles:
+      - auto
+      - express-auto
+
+  # =============================================================================
+  # Manual-instrumented services
+  # =============================================================================
+  songs-spring-manual:
+    build:
+      context: ./src/manual-instrumentation/spring-manual
+    ports:
+      - 8081:8080
+    environment:
+      - MUSIC_SERVICE_URL=https://musicbrainz.org/ws/2/recording/
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_SERVICE_NAME=songs-spring-manual
+      - OTEL_RESOURCE_ATTRIBUTES=service.version=0.0.1
+      - OTEL_METRICS_EXPORTER=none
+      - OTEL_LOGS_EXPORTER=none
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://songs-db:5432/songs_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_DATASOURCE_DRIVER-CLASS-NAME=org.postgresql.Driver
+    depends_on:
+      otel-collector:
+        condition: service_healthy
+      songs-db:
+        condition: service_started
+    profiles:
+      - manual
+      - spring-manual
+
+  songs-express-manual:
+    build:
+      context: ./src/manual-instrumentation/express-manual
+    ports:
+      - 3001:3000
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+      - OTEL_SERVICE_NAME=songs-express-manual
+      - DB_HOST=songs-db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - DB_NAME=songs_db
+      - MUSIC_SERVICE_URL=https://musicbrainz.org/ws/2/recording/
+    depends_on:
+      otel-collector:
+        condition: service_healthy
+      songs-db:
+        condition: service_started
+    profiles:
+      - manual
+      - express-manual
+
+  # =============================================================================
+  # Uninstrumented services (no OTel, baseline for benchmarking)
+  # =============================================================================
+  songs-spring-uninstrumented:
+    build:
+      context: ./src/uninstrumented/spring-uninstrumented
+    ports:
+      - 8082:8080
+    environment:
+      - MUSIC_SERVICE_URL=https://musicbrainz.org/ws/2/recording/
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://songs-db:5432/songs_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_DATASOURCE_DRIVER-CLASS-NAME=org.postgresql.Driver
+    depends_on:
+      songs-db:
+        condition: service_started
+    profiles:
+      - uninstrumented
+      - spring-uninstrumented
+
+  songs-express-uninstrumented:
+    build:
+      context: ./src/uninstrumented/express-uninstrumented
+    ports:
+      - 3002:3000
+    environment:
+      - DB_HOST=songs-db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - DB_NAME=songs_db
+      - MUSIC_SERVICE_URL=https://musicbrainz.org/ws/2/recording/
+    depends_on:
+      songs-db:
+        condition: service_started
+    profiles:
+      - uninstrumented
+      - express-uninstrumented
+
+  # =============================================================================
+  # Shared infrastructure services
+  # =============================================================================
   songs-db:
     image: postgres:18.1-alpine3.22
     ports:
@@ -35,29 +162,15 @@ services:
     volumes:
       - ./src/songs-db/init-songs-db.sh:/docker-entrypoint-initdb.d/init-songs-db.sh
     profiles:
+      - auto
+      - manual
+      - uninstrumented
       - spring-auto
+      - spring-manual
+      - spring-uninstrumented
       - express-auto
-
-  express-auto:
-    build:
-      context: ./src/express-auto
-    ports:
-      - 3000:3000
-    environment:
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
-      - OTEL_SERVICE_NAME=express-auto
-      - OTEL_RESOURCE_ATTRIBUTES=service.version=0.1.0
-      - DB_HOST=songs-db
-      - DB_PORT=5432
-      - DB_USER=postgres
-      - DB_PASSWORD=password
-      - DB_NAME=songs_db
-      - MUSIC_SERVICE_URL=https://musicbrainz.org/ws/2/recording/
-    depends_on:
-      otel-collector:
-        condition: service_healthy
-    profiles:
-      - express-auto
+      - express-manual
+      - express-uninstrumented
 
   jaeger:
     image: cr.jaegertracing.io/jaegertracing/jaeger:2.15.1
@@ -66,13 +179,17 @@ services:
       - 4317
       - 4318
     profiles:
+      - auto
+      - manual
       - spring-auto
+      - spring-manual
       - express-auto
+      - express-manual
 
   otel-collector:
     build:
       context: ./src/otel-collector
-    command: 
+    command:
       - --config=/etc/otel-collector-config.yaml
     volumes:
       - ./src/otel-collector/otel-collector-config${OBSERVABILITY_BACKEND:+}-${OBSERVABILITY_BACKEND}.yaml:/etc/otel-collector-config.yaml
@@ -94,5 +211,12 @@ services:
       retries: 5
       start_period: 20s
     profiles:
+      - auto
+      - manual
+      - uninstrumented
       - spring-auto
+      - spring-manual
+      - spring-uninstrumented
       - express-auto
+      - express-manual
+      - express-uninstrumented

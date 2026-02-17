@@ -7,14 +7,7 @@ const {
 const sdk = new NodeSDK({
   traceExporter: new OTLPTraceExporter(),
   instrumentations: [
-    getNodeAutoInstrumentations({
-//      '@opentelemetry/instrumentation-net': {
-//        enabled: false,
-//      },
-//      '@opentelemetry/instrumentation-dns': {
-//        enabled: false,
-//      }
-    })
+    getNodeAutoInstrumentations()
   ],
 });
 

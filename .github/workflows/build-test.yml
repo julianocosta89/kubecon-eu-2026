@@ -10,8 +10,24 @@ on:
         description: 'Test spring-auto service'
         required: false
         default: 'false'
+      spring-manual:
+        description: 'Test spring-manual service'
+        required: false
+        default: 'false'
+      spring-uninstrumented:
+        description: 'Test spring-uninstrumented service'
+        required: false
+        default: 'false'
       express-auto:
         description: 'Test express-auto service'
+        required: false
+        default: 'false'
+      express-manual:
+        description: 'Test express-manual service'
+        required: false
+        default: 'false'
+      express-uninstrumented:
+        description: 'Test express-uninstrumented service'
         required: false
         default: 'false'
       otel-collector:
@@ -35,7 +51,11 @@ jobs:
     if: github.event_name == 'pull_request'
     outputs:
       spring-auto: ${{ steps.changes.outputs.spring-auto }}
+      spring-manual: ${{ steps.changes.outputs.spring-manual }}
+      spring-uninstrumented: ${{ steps.changes.outputs.spring-uninstrumented }}
       express-auto: ${{ steps.changes.outputs.express-auto }}
+      express-manual: ${{ steps.changes.outputs.express-manual }}
+      express-uninstrumented: ${{ steps.changes.outputs.express-uninstrumented }}
       otel-collector: ${{ steps.changes.outputs.otel-collector }}
     steps:
       - name: Checkout code
@@ -49,11 +69,23 @@ jobs:
         with:
           filters: |
             spring-auto:
-              - 'src/spring-auto/**'
+              - 'src/auto-instrumentation/spring-auto/**'
+            spring-manual:
+              - 'src/manual-instrumentation/spring-manual/**'
+            spring-uninstrumented:
+              - 'src/uninstrumented/spring-uninstrumented/**'
             express-auto:
-              - 'src/express-auto/**'
+              - 'src/auto-instrumentation/express-auto/**'
+            express-manual:
+              - 'src/manual-instrumentation/express-manual/**'
+            express-uninstrumented:
+              - 'src/uninstrumented/express-uninstrumented/**'
             otel-collector:
               - 'src/otel-collector/**'
+
+  # =============================================================================
+  # Build jobs
+  # =============================================================================
   test-spring-auto-service:
     name: Test Spring Auto Service Build
     runs-on: ubuntu-latest
@@ -71,9 +103,42 @@ jobs:
           docker compose build songs-spring-auto
         env:
           OBSERVABILITY_BACKEND: jaeger
-          OTEL_EXPORTER_OTLP_ENDPOINT: http://localhost:4318
-          OTEL_SERVICE_NAME: music-service-auto-test
-          OTEL_RESOURCE_ATTRIBUTES: service.version=test
+
+  test-spring-manual-service:
+    name: Test Spring Manual Service Build
+    runs-on: ubuntu-latest
+    needs: [detect-changes]
+    if: (github.event_name == 'workflow_dispatch' && inputs.spring-manual == 'true') || (github.event_name == 'pull_request' && needs.detect-changes.outputs.spring-manual == 'true')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f  # v3
+
+      - name: Build Spring Manual Service
+        run: |
+          docker compose build songs-spring-manual
+        env:
+          OBSERVABILITY_BACKEND: jaeger
+
+  test-spring-uninstrumented-service:
+    name: Test Spring Uninstrumented Service Build
+    runs-on: ubuntu-latest
+    needs: [detect-changes]
+    if: (github.event_name == 'workflow_dispatch' && inputs.spring-uninstrumented == 'true') || (github.event_name == 'pull_request' && needs.detect-changes.outputs.spring-uninstrumented == 'true')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f  # v3
+
+      - name: Build Spring Uninstrumented Service
+        run: |
+          docker compose build songs-spring-uninstrumented
+        env:
+          OBSERVABILITY_BACKEND: jaeger
 
   test-express-auto-service:
     name: Test Express Auto Service Build
@@ -89,13 +154,49 @@ jobs:
 
       - name: Build Express Auto Service
         run: |
-          docker compose build express-auto
+          docker compose build songs-express-auto
         env:
           OBSERVABILITY_BACKEND: jaeger
-          OTEL_EXPORTER_OTLP_ENDPOINT: http://localhost:4318
-          OTEL_SERVICE_NAME: music-service-express-auto-test
-          OTEL_RESOURCE_ATTRIBUTES: service.version=test
 
+  test-express-manual-service:
+    name: Test Express Manual Service Build
+    runs-on: ubuntu-latest
+    needs: [detect-changes]
+    if: (github.event_name == 'workflow_dispatch' && inputs.express-manual == 'true') || (github.event_name == 'pull_request' && needs.detect-changes.outputs.express-manual == 'true')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f  # v3
+
+      - name: Build Express Manual Service
+        run: |
+          docker compose build songs-express-manual
+        env:
+          OBSERVABILITY_BACKEND: jaeger
+
+  test-express-uninstrumented-service:
+    name: Test Express Uninstrumented Service Build
+    runs-on: ubuntu-latest
+    needs: [detect-changes]
+    if: (github.event_name == 'workflow_dispatch' && inputs.express-uninstrumented == 'true') || (github.event_name == 'pull_request' && needs.detect-changes.outputs.express-uninstrumented == 'true')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f  # v3
+
+      - name: Build Express Uninstrumented Service
+        run: |
+          docker compose build songs-express-uninstrumented
+        env:
+          OBSERVABILITY_BACKEND: jaeger
+
+  # =============================================================================
+  # OTel Collector build and cache
+  # =============================================================================
   build-otel-collector:
     name: Build and Cache OpenTelemetry Collector
     runs-on: ubuntu-latest
@@ -154,9 +255,6 @@ jobs:
           docker save -o otel-collector-image.tar "$IMAGE_NAME"
         env:
           OBSERVABILITY_BACKEND: jaeger
-          OTEL_EXPORTER_OTLP_ENDPOINT: http://localhost:4318
-          OTEL_SERVICE_NAME: otel-collector-test
-          OTEL_RESOURCE_ATTRIBUTES: service.version=test
 
       - name: Save collector image to cache
         if: steps.set-outputs.outputs.cache-hit != 'true'
@@ -170,6 +268,72 @@ jobs:
         with:
           name: ${{ steps.cache-key.outputs.cache-key }}
           path: otel-collector-image.tar
+          retention-days: 1
+
+  # =============================================================================
+  build-cache-jaeger:
+    name: Build and Cache Jaeger
+    runs-on: ubuntu-latest
+    if: always()
+    outputs:
+      artifact-name: ${{ steps.set-outputs.outputs.artifact-name }}
+      cache-key: ${{ steps.cache-key.outputs.cache-key }}
+      cache-hit: ${{ steps.set-outputs.outputs.cache-hit }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+
+      - name: Generate cache key from Jaeger version
+        id: cache-key
+        run: |
+          # Extract Jaeger version from compose.yaml
+          JAEGER_VERSION=$(grep -A 1 "jaeger:" compose.yaml | grep "image:" | sed 's/.*jaeger://' | tr -d ' ')
+          echo "Jaeger version: $JAEGER_VERSION"
+          CACHE_KEY="jaeger-$JAEGER_VERSION"
+          echo "cache-key=$CACHE_KEY" >> $GITHUB_OUTPUT
+
+      - name: Check cache for Jaeger image
+        id: check-cache
+        uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306  # v5
+        with:
+          path: jaeger-image.tar
+          key: ${{ steps.cache-key.outputs.cache-key }}
+          restore-keys: |
+            jaeger-
+
+      - name: Set outputs
+        id: set-outputs
+        run: |
+          # Check if we got an exact cache hit (not just a restore-key match)
+          if [ "${{ steps.check-cache.outputs.cache-matched-key }}" = "${{ steps.cache-key.outputs.cache-key }}" ]; then
+            echo "cache-hit=true" >> $GITHUB_OUTPUT
+          else
+            echo "cache-hit=false" >> $GITHUB_OUTPUT
+          fi
+          echo "artifact-name=${{ steps.cache-key.outputs.cache-key }}" >> $GITHUB_OUTPUT
+
+      - name: Pull and save Jaeger image
+        if: steps.set-outputs.outputs.cache-hit != 'true'
+        run: |
+          # Extract full Jaeger image name from compose.yaml
+          JAEGER_IMAGE=$(grep -A 1 "jaeger:" compose.yaml | grep "image:" | awk '{print $2}')
+          echo "Pulling image: $JAEGER_IMAGE"
+          docker pull "$JAEGER_IMAGE"
+          # Save image as tar
+          docker save -o jaeger-image.tar "$JAEGER_IMAGE"
+
+      - name: Save Jaeger image to cache
+        if: steps.set-outputs.outputs.cache-hit != 'true'
+        uses: actions/cache/save@cdf6c1fa76f9f475f3d7449005a359c84ca0f306  # v5
+        with:
+          path: jaeger-image.tar
+          key: ${{ steps.cache-key.outputs.cache-key }}
+
+      - name: Upload Jaeger image as artifact for current workflow
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
+        with:
+          name: ${{ steps.cache-key.outputs.cache-key }}
+          path: jaeger-image.tar
           retention-days: 1
 
   test-otel-collector:
@@ -195,10 +359,13 @@ jobs:
           docker load -i otel-collector-image.tar
           echo "OpenTelemetry Collector image loaded"
 
+  # =============================================================================
+  # Integration tests for instrumented services (with Jaeger trace verification)
+  # =============================================================================
   integration-test-spring-auto:
     name: Integration Test Spring Auto Service
     runs-on: ubuntu-latest
-    needs: [detect-changes, test-spring-auto-service, build-otel-collector]
+    needs: [detect-changes, test-spring-auto-service, build-otel-collector, build-cache-jaeger]
     if: (github.event_name == 'workflow_dispatch' && inputs.spring-auto == 'true') || (github.event_name == 'pull_request' && needs.detect-changes.outputs.spring-auto == 'true' && needs.test-spring-auto-service.result == 'success')
     steps:
       - name: Checkout code
@@ -224,50 +391,123 @@ jobs:
         run: |
           docker load -i otel-collector-image.tar
 
+      - name: Download Jaeger image artifact
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7
+        with:
+          name: ${{ needs.build-cache-jaeger.outputs.artifact-name }}
+          path: ./
+
+      - name: Restore Jaeger image from cache
+        if: needs.build-cache-jaeger.outputs.cache-hit == 'true'
+        uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306  # v5
+        with:
+          path: jaeger-image.tar
+          key: ${{ needs.build-cache-jaeger.outputs.cache-key }}
+
+      - name: Load Jaeger image
+        run: |
+          docker load -i jaeger-image.tar
+
       - name: Run integration test
         run: |
-          # Start services in background
           docker compose --profile spring-auto up -d
-          
-          # Wait for services to be healthy
           echo "Waiting for services to start..."
           sleep 30
-
-          # Check if services are running
           docker compose ps
-          
-          # Send test request
           echo "Sending test request..."
           curl -f http://localhost:8080/songs/Polly/Nirvana || exit 1
-          
-          # Wait a bit for trace to be processed
           sleep 10
-          
-          # Check Jaeger for traces
           echo "Checking for traces in Jaeger..."
           TRACES=$(curl -s "http://localhost:16686/api/traces?service=songs-spring-auto&limit=1" | jq '.data | length')
-          
           if [ "$TRACES" -gt 0 ]; then
-            echo "✅ Traces found in Jaeger!"
+            echo "Traces found in Jaeger!"
           else
-            echo "❌ No traces found in Jaeger"
+            echo "No traces found in Jaeger"
             docker compose logs
             exit 1
           fi
         env:
           OBSERVABILITY_BACKEND: jaeger
-          OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
-          OTEL_SERVICE_NAME: songs-spring-auto
-          OTEL_RESOURCE_ATTRIBUTES: service.version=test
 
       - name: Cleanup
         if: always()
         run: docker compose --profile spring-auto down -v
 
+  integration-test-spring-manual:
+    name: Integration Test Spring Manual Service
+    runs-on: ubuntu-latest
+    needs: [detect-changes, test-spring-manual-service, build-otel-collector, build-cache-jaeger]
+    if: (github.event_name == 'workflow_dispatch' && inputs.spring-manual == 'true') || (github.event_name == 'pull_request' && needs.detect-changes.outputs.spring-manual == 'true' && needs.test-spring-manual-service.result == 'success')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f  # v3
+
+      - name: Download collector image artifact
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7
+        with:
+          name: ${{ needs.build-otel-collector.outputs.artifact-name }}
+          path: ./
+
+      - name: Restore collector image from cache
+        if: needs.build-otel-collector.outputs.cache-hit == 'true'
+        uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306  # v5
+        with:
+          path: otel-collector-image.tar
+          key: ${{ needs.build-otel-collector.outputs.cache-key }}
+
+      - name: Load collector image
+        run: |
+          docker load -i otel-collector-image.tar
+
+      - name: Download Jaeger image artifact
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7
+        with:
+          name: ${{ needs.build-cache-jaeger.outputs.artifact-name }}
+          path: ./
+
+      - name: Restore Jaeger image from cache
+        if: needs.build-cache-jaeger.outputs.cache-hit == 'true'
+        uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306  # v5
+        with:
+          path: jaeger-image.tar
+          key: ${{ needs.build-cache-jaeger.outputs.cache-key }}
+
+      - name: Load Jaeger image
+        run: |
+          docker load -i jaeger-image.tar
+
+      - name: Run integration test
+        run: |
+          docker compose --profile spring-manual up -d
+          echo "Waiting for services to start..."
+          sleep 30
+          docker compose ps
+          echo "Sending test request..."
+          curl -f http://localhost:8081/songs/Polly/Nirvana || exit 1
+          sleep 10
+          echo "Checking for traces in Jaeger..."
+          TRACES=$(curl -s "http://localhost:16686/api/traces?service=songs-spring-manual&limit=1" | jq '.data | length')
+          if [ "$TRACES" -gt 0 ]; then
+            echo "Traces found in Jaeger!"
+          else
+            echo "No traces found in Jaeger"
+            docker compose logs
+            exit 1
+          fi
+        env:
+          OBSERVABILITY_BACKEND: jaeger
+
+      - name: Cleanup
+        if: always()
+        run: docker compose --profile spring-manual down -v
+
   integration-test-express-auto:
     name: Integration Test Express Auto Service
     runs-on: ubuntu-latest
-    needs: [detect-changes, test-express-auto-service, build-otel-collector]
+    needs: [detect-changes, test-express-auto-service, build-otel-collector, build-cache-jaeger]
     if: (github.event_name == 'workflow_dispatch' && inputs.express-auto == 'true') || (github.event_name == 'pull_request' && needs.detect-changes.outputs.express-auto == 'true' && needs.test-express-auto-service.result == 'success')
     steps:
       - name: Checkout code
@@ -293,42 +533,174 @@ jobs:
         run: |
           docker load -i otel-collector-image.tar
 
+      - name: Download Jaeger image artifact
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7
+        with:
+          name: ${{ needs.build-cache-jaeger.outputs.artifact-name }}
+          path: ./
+
+      - name: Restore Jaeger image from cache
+        if: needs.build-cache-jaeger.outputs.cache-hit == 'true'
+        uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306  # v5
+        with:
+          path: jaeger-image.tar
+          key: ${{ needs.build-cache-jaeger.outputs.cache-key }}
+
+      - name: Load Jaeger image
+        run: |
+          docker load -i jaeger-image.tar
+
       - name: Run integration test
         run: |
-          # Start services in background
           docker compose --profile express-auto up -d
-          
-          # Wait for services to be healthy
           echo "Waiting for services to start..."
           sleep 30
-
-          # Check if services are running
           docker compose ps
-          
-          # Send test request
           echo "Sending test request..."
           curl -f http://localhost:3000/songs/Polly/Nirvana || exit 1
-          
-          # Wait a bit for trace to be processed
           sleep 10
-          
-          # Check Jaeger for traces
           echo "Checking for traces in Jaeger..."
-          TRACES=$(curl -s "http://localhost:16686/api/traces?service=express-auto&limit=1" | jq '.data | length')
-          
+          TRACES=$(curl -s "http://localhost:16686/api/traces?service=songs-express-auto&limit=1" | jq '.data | length')
           if [ "$TRACES" -gt 0 ]; then
-            echo "✅ Traces found in Jaeger!"
+            echo "Traces found in Jaeger!"
           else
-            echo "❌ No traces found in Jaeger"
+            echo "No traces found in Jaeger"
             docker compose logs
             exit 1
           fi
         env:
           OBSERVABILITY_BACKEND: jaeger
-          OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
-          OTEL_SERVICE_NAME: express-auto
-          OTEL_RESOURCE_ATTRIBUTES: service.version=test
 
       - name: Cleanup
         if: always()
         run: docker compose --profile express-auto down -v
+
+  integration-test-express-manual:
+    name: Integration Test Express Manual Service
+    runs-on: ubuntu-latest
+    needs: [detect-changes, test-express-manual-service, build-otel-collector, build-cache-jaeger]
+    if: (github.event_name == 'workflow_dispatch' && inputs.express-manual == 'true') || (github.event_name == 'pull_request' && needs.detect-changes.outputs.express-manual == 'true' && needs.test-express-manual-service.result == 'success')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f  # v3
+
+      - name: Download collector image artifact
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7
+        with:
+          name: ${{ needs.build-otel-collector.outputs.artifact-name }}
+          path: ./
+
+      - name: Restore collector image from cache
+        if: needs.build-otel-collector.outputs.cache-hit == 'true'
+        uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306  # v5
+        with:
+          path: otel-collector-image.tar
+          key: ${{ needs.build-otel-collector.outputs.cache-key }}
+
+      - name: Load collector image
+        run: |
+          docker load -i otel-collector-image.tar
+
+      - name: Download Jaeger image artifact
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7
+        with:
+          name: ${{ needs.build-cache-jaeger.outputs.artifact-name }}
+          path: ./
+
+      - name: Restore Jaeger image from cache
+        if: needs.build-cache-jaeger.outputs.cache-hit == 'true'
+        uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306  # v5
+        with:
+          path: jaeger-image.tar
+          key: ${{ needs.build-cache-jaeger.outputs.cache-key }}
+
+      - name: Load Jaeger image
+        run: |
+          docker load -i jaeger-image.tar
+
+      - name: Run integration test
+        run: |
+          docker compose --profile express-manual up -d
+          echo "Waiting for services to start..."
+          sleep 30
+          docker compose ps
+          echo "Sending test request..."
+          curl -f http://localhost:3001/songs/Polly/Nirvana || exit 1
+          sleep 10
+          echo "Checking for traces in Jaeger..."
+          TRACES=$(curl -s "http://localhost:16686/api/traces?service=songs-express-manual&limit=1" | jq '.data | length')
+          if [ "$TRACES" -gt 0 ]; then
+            echo "Traces found in Jaeger!"
+          else
+            echo "No traces found in Jaeger"
+            docker compose logs
+            exit 1
+          fi
+        env:
+          OBSERVABILITY_BACKEND: jaeger
+
+      - name: Cleanup
+        if: always()
+        run: docker compose --profile express-manual down -v
+
+  # =============================================================================
+  # Integration tests for uninstrumented services (HTTP response only, no traces)
+  # =============================================================================
+  integration-test-spring-uninstrumented:
+    name: Integration Test Spring Uninstrumented Service
+    runs-on: ubuntu-latest
+    needs: [detect-changes, test-spring-uninstrumented-service]
+    if: (github.event_name == 'workflow_dispatch' && inputs.spring-uninstrumented == 'true') || (github.event_name == 'pull_request' && needs.detect-changes.outputs.spring-uninstrumented == 'true' && needs.test-spring-uninstrumented-service.result == 'success')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f  # v3
+
+      - name: Run integration test
+        run: |
+          docker compose --profile spring-uninstrumented up -d
+          echo "Waiting for services to start..."
+          sleep 30
+          docker compose ps
+          echo "Sending test request..."
+          curl -f http://localhost:8082/songs/Polly/Nirvana || exit 1
+          echo "Spring uninstrumented service responded successfully!"
+        env:
+          OBSERVABILITY_BACKEND: jaeger
+
+      - name: Cleanup
+        if: always()
+        run: docker compose --profile spring-uninstrumented down -v
+
+  integration-test-express-uninstrumented:
+    name: Integration Test Express Uninstrumented Service
+    runs-on: ubuntu-latest
+    needs: [detect-changes, test-express-uninstrumented-service]
+    if: (github.event_name == 'workflow_dispatch' && inputs.express-uninstrumented == 'true') || (github.event_name == 'pull_request' && needs.detect-changes.outputs.express-uninstrumented == 'true' && needs.test-express-uninstrumented-service.result == 'success')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f  # v3
+
+      - name: Run integration test
+        run: |
+          docker compose --profile express-uninstrumented up -d
+          echo "Waiting for services to start..."
+          sleep 30
+          docker compose ps
+          echo "Sending test request..."
+          curl -f http://localhost:3002/songs/Polly/Nirvana || exit 1
+          echo "Express uninstrumented service responded successfully!"
+        env:
+          OBSERVABILITY_BACKEND: jaeger
+
+      - name: Cleanup
+        if: always()
+        run: docker compose --profile express-uninstrumented down -v
