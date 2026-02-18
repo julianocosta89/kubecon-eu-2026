@@ -1,4 +1,4 @@
-.PHONY: help run run-attach build stop clean test-endpoints logs health
+.PHONY: help run run-attach build stop clean logs
 
 # Default target
 help:
