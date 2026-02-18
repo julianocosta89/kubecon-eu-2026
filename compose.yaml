@@ -152,7 +152,7 @@ services:
   # Shared infrastructure services
   # =============================================================================
   songs-db:
-    image: postgres:18.2-alpine3.22
+    image: postgres:18.2-alpine3.23
     ports:
       - 5432
     environment:

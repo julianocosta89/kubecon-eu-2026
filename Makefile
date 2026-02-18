@@ -32,13 +32,6 @@ help:
 	@echo "  make clean spring-auto            Stop and remove volumes"
 	@echo "  make clean all                    Nuclear option (clean everything)"
 	@echo ""
-	@echo "Testing & Monitoring:"
-	@echo "  make test spring-auto             Test endpoint with curl + jq"
-	@echo "  make test all                     Test all 6 service endpoints"
-	@echo "  make logs spring-auto             Follow service logs (also: otel-collector, jaeger, songs-db)"
-	@echo "  make health                       Check OTel Collector health"
-	@echo "  make jaeger                       Open Jaeger UI in browser"
-	@echo ""
 
 # Run services (detached/background - default mode)
 run:
@@ -156,6 +149,8 @@ build:
 	elif [ "$(filter-out $@,$(MAKECMDGOALS))" = "" ]; then \
 		echo "Usage: make build <service-name>"; \
 		echo "Available: spring-auto, express-auto, spring-manual, express-manual, spring-uninstrumented, express-uninstrumented, otel-collector, all"; \
+	elif [ "$(filter-out $@,$(MAKECMDGOALS))" = "otel-collector" ]; then \
+		docker compose build otel-collector; \
 	else \
 		docker compose build songs-$(filter-out $@,$(MAKECMDGOALS)); \
 	fi
@@ -178,73 +173,6 @@ clean:
 		echo "Usage: make clean <service-name>"; \
 	else \
 		docker compose --profile $(filter-out $@,$(MAKECMDGOALS)) down -v; \
-	fi
-
-# Test endpoints
-test:
-	@if [ "$(filter-out $@,$(MAKECMDGOALS))" = "spring-auto" ]; then \
-		if ! docker compose ps songs-spring-auto | grep -q "Up"; then \
-			echo "ERROR: Service songs-spring-auto is not running"; \
-			echo "Please start it first with: make run spring-auto"; \
-			exit 1; \
-		fi; \
-		curl -s http://localhost:8080/songs/Polly/Nirvana | jq; \
-	elif [ "$(filter-out $@,$(MAKECMDGOALS))" = "express-auto" ]; then \
-		if ! docker compose ps songs-express-auto | grep -q "Up"; then \
-			echo "ERROR: Service songs-express-auto is not running"; \
-			echo "Please start it first with: make run express-auto"; \
-			exit 1; \
-		fi; \
-		curl -s http://localhost:3000/songs/Polly/Nirvana | jq; \
-	elif [ "$(filter-out $@,$(MAKECMDGOALS))" = "spring-manual" ]; then \
-		if ! docker compose ps songs-spring-manual | grep -q "Up"; then \
-			echo "ERROR: Service songs-spring-manual is not running"; \
-			echo "Please start it first with: make run spring-manual"; \
-			exit 1; \
-		fi; \
-		curl -s http://localhost:8081/songs/Polly/Nirvana | jq; \
-	elif [ "$(filter-out $@,$(MAKECMDGOALS))" = "express-manual" ]; then \
-		if ! docker compose ps songs-express-manual | grep -q "Up"; then \
-			echo "ERROR: Service songs-express-manual is not running"; \
-			echo "Please start it first with: make run express-manual"; \
-			exit 1; \
-		fi; \
-		curl -s http://localhost:3001/songs/Polly/Nirvana | jq; \
-	elif [ "$(filter-out $@,$(MAKECMDGOALS))" = "spring-uninstrumented" ]; then \
-		if ! docker compose ps songs-spring-uninstrumented | grep -q "Up"; then \
-			echo "ERROR: Service songs-spring-uninstrumented is not running"; \
-			echo "Please start it first with: make run spring-uninstrumented"; \
-			exit 1; \
-		fi; \
-		curl -s http://localhost:8082/songs/Polly/Nirvana | jq; \
-	elif [ "$(filter-out $@,$(MAKECMDGOALS))" = "express-uninstrumented" ]; then \
-		if ! docker compose ps songs-express-uninstrumented | grep -q "Up"; then \
-			echo "ERROR: Service songs-express-uninstrumented is not running"; \
-			echo "Please start it first with: make run express-uninstrumented"; \
-			exit 1; \
-		fi; \
-		curl -s http://localhost:3002/songs/Polly/Nirvana | jq; \
-	elif [ "$(filter-out $@,$(MAKECMDGOALS))" = "all" ]; then \
-		if ! docker compose ps songs-spring-auto | grep -q "Up"; then \
-			echo "ERROR: Service songs-spring-auto is not running"; \
-			echo "Please start it first with: make run all"; \
-			exit 1; \
-		fi; \
-		echo "Testing Spring Auto (8080)..."; \
-		curl -s http://localhost:8080/songs/Polly/Nirvana | jq; \
-		echo "\nTesting Express Auto (3000)..."; \
-		curl -s http://localhost:3000/songs/Polly/Nirvana | jq; \
-		echo "\nTesting Spring Manual (8081)..."; \
-		curl -s http://localhost:8081/songs/Polly/Nirvana | jq; \
-		echo "\nTesting Express Manual (3001)..."; \
-		curl -s http://localhost:3001/songs/Polly/Nirvana | jq; \
-		echo "\nTesting Spring Uninstrumented (8082)..."; \
-		curl -s http://localhost:8082/songs/Polly/Nirvana | jq; \
-		echo "\nTesting Express Uninstrumented (3002)..."; \
-		curl -s http://localhost:3002/songs/Polly/Nirvana | jq; \
-	else \
-		echo "Usage: make test <service-name>"; \
-		echo "Available: spring-auto, express-auto, spring-manual, express-manual, spring-uninstrumented, express-uninstrumented, all"; \
 	fi
 
 # Show logs
