@@ -411,7 +411,6 @@ When adding new services or scenarios:
 - [k6 Documentation](https://k6.io/docs/)
 - [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/)
 - [Datadog Metrics Explorer](https://docs.datadoghq.com/metrics/explorer/)
-- [Project CLAUDE.md](../CLAUDE.md) - Full architecture reference
 
 ## License
 
