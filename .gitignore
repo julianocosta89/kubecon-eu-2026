@@ -27,6 +27,7 @@ eggs/
 .eggs/
 lib/
 lib64/
+!benchmarks/**/lib/
 parts/
 sdist/
 var/
