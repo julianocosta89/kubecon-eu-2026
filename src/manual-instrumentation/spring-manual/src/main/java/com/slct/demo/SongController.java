@@ -28,6 +28,9 @@ import io.opentelemetry.api.common.Attributes;
 @RestController
 public class SongController {
 
+    private static final AttributeKey<String> SONG_TITLE_KEY = AttributeKey.stringKey("song.title");
+    private static final AttributeKey<String> SONG_ARTIST_KEY = AttributeKey.stringKey("song.artist");
+
     private final SongService songService;
     private final Tracer tracer;
 
@@ -50,8 +53,8 @@ public class SongController {
                 .setAllAttributes(Attributes.of(
                     HttpAttributes.HTTP_REQUEST_METHOD, HttpAttributes.HttpRequestMethodValues.GET,
                     HttpAttributes.HTTP_ROUTE, "/songs/{title}/{artist}",
-                    AttributeKey.stringKey("song.title"), title,
-                    AttributeKey.stringKey("song.artist"), artist
+                    SONG_TITLE_KEY, title,
+                    SONG_ARTIST_KEY, artist
                 ))
                 .startSpan();
 

@@ -14,6 +14,9 @@ import io.opentelemetry.api.common.Attributes;
 @Service
 public class SongService {
 
+    private static final AttributeKey<String> SONG_TITLE_KEY = AttributeKey.stringKey("song.title");
+    private static final AttributeKey<String> SONG_ARTIST_KEY = AttributeKey.stringKey("song.artist");
+
     private final SongRepository songRepository;
     private final Tracer tracer;
 
@@ -31,8 +34,8 @@ public class SongService {
                     DbAttributes.DB_OPERATION_NAME, "SELECT",
                     DbAttributes.DB_COLLECTION_NAME, "songs_db.songs",
                     DbAttributes.DB_QUERY_TEXT, SongRepository.FIND_BY_TITLE_AND_ARTIST_QUERY,
-                    AttributeKey.stringKey("song.title"), title,
-                    AttributeKey.stringKey("song.artist"), artist
+                    SONG_TITLE_KEY, title,
+                    SONG_ARTIST_KEY, artist
                 ))
                 .startSpan();
 
@@ -62,8 +65,8 @@ public class SongService {
                     DbAttributes.DB_OPERATION_NAME, "INSERT",
                     DbAttributes.DB_QUERY_TEXT, "INSERT INTO songs_db.songs (title, artist, album, year, duration_ms, genre) VALUES (?, ?, ?, ?, ?, ?)",
                     DbAttributes.DB_COLLECTION_NAME, "songs_db.songs",
-                    AttributeKey.stringKey("song.title"), title,
-                    AttributeKey.stringKey("song.artist"), artist
+                    SONG_TITLE_KEY, title,
+                    SONG_ARTIST_KEY, artist
                 ))
                 .startSpan();
 
