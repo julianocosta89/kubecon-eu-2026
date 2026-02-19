@@ -1,4 +1,4 @@
-.PHONY: help run run-attach build stop clean logs
+.PHONY: help run run-attach build stop clean logs benchmark
 
 # Default target
 help:
@@ -25,6 +25,13 @@ help:
 	@echo "Build Services:"
 	@echo "  make build spring-auto            Build specific service"
 	@echo "  make build all                    Build all services"
+	@echo ""
+	@echo "Benchmark (requires k6 + OBSERVABILITY_BACKEND=datadog in .env):"
+	@echo "  make benchmark                         Run full benchmark (all 6 services)"
+	@echo "  make benchmark RATE=100                Requests/sec during steady-state (default: 200)"
+	@echo "  make benchmark WARMUP_DURATION=60s     Warmup duration (default: 120s)"
+	@echo "  make benchmark STEADY_STATE_DURATION=60s  Steady-state duration (default: 300s)"
+	@echo "  make benchmark COOLDOWN=60             Seconds between services (default: 120)"
 	@echo ""
 	@echo "Stop & Clean:"
 	@echo "  make stop spring-auto             Stop specific service"
@@ -184,6 +191,12 @@ logs:
 	else \
 		docker compose logs -f songs-$(filter-out $@,$(MAKECMDGOALS)); \
 	fi
+
+# Run benchmarks
+# Options are passed as Make variables and automatically exported to the shell script:
+#   make benchmark RATE=100 WARMUP_DURATION=60s STEADY_STATE_DURATION=60s COOLDOWN=60
+benchmark:
+	@cd benchmarks && ./scripts/run-benchmark.sh
 
 # Dummy targets to allow service names as arguments
 spring-auto express-auto spring-manual express-manual spring-uninstrumented express-uninstrumented auto manual uninstrumented all otel-collector jaeger songs-db:

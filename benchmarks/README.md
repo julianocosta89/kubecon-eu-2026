@@ -7,15 +7,16 @@ This directory contains load testing infrastructure to benchmark OpenTelemetry i
 The benchmark suite quantifies CPU and memory differences between:
 - **Uninstrumented** (baseline) - No OpenTelemetry dependencies
 - **Auto-instrumented** - Java agent / Node.js auto-instrumentations
-- **Manual-instrumented** - Selective SDK-based instrumentation (future)
+- **Manual-instrumented** - Selective SDK-based instrumentation
 
-### MVP Scope
+### Scope
 
-The current implementation benchmarks:
-- ✅ `songs-spring-uninstrumented` (baseline)
-- ✅ `songs-spring-auto` (auto-instrumented with Java agent)
+All 6 service variants are benchmarked:
 
-Future expansion: Express services, manual-instrumented services, additional test scenarios.
+| Service | Uninstrumented | Auto | Manual |
+|---------|---------------|------|--------|
+| Spring  | ✅ port 8082  | ✅ port 8080 | ✅ port 8081 |
+| Express | ✅ port 3002  | ✅ port 3000 | ✅ port 3001 |
 
 ## Prerequisites
 
@@ -44,7 +45,8 @@ Future expansion: Express services, manual-instrumented services, additional tes
 
 3. **Datadog Account** - Metrics collection backend
    - Set up account at https://www.datadoghq.com/
-   - Obtain API key from https://app.datadoghq.com/organization-settings/api-keys
+   - Obtain API key from `https://app.<DD_SITE_PARAMETER>/organization-settings/api-keys`
+     (e.g. `https://app.datadoghq.eu/organization-settings/api-keys`)
 
 ### Environment Configuration
 
@@ -62,82 +64,91 @@ Future expansion: Express services, manual-instrumented services, additional tes
 
 ## Quick Start
 
-### Run MVP Benchmark
+### Run the Full Benchmark
 
 From the `benchmarks/` directory:
 
 ```bash
-# Ensure you're in the benchmarks directory
 cd benchmarks
-
-# Run the full MVP benchmark suite
-./scripts/run-mvp-benchmark.sh
+./scripts/run-benchmark.sh
 ```
 
-This will:
-1. Test `spring-uninstrumented` (baseline) → warmup → steady-state
-2. Cooldown (2 minutes)
-3. Test `spring-auto` (auto-instrumented) → warmup → steady-state
-4. Generate results in `results/{timestamp}/`
+This will benchmark all 6 services sequentially:
+1. `spring-uninstrumented` → `spring-auto` → `spring-manual`
+2. `express-uninstrumented` → `express-auto` → `express-manual`
 
-**Duration**: ~15 minutes total (7 minutes per service + cooldown)
+Each service runs: warmup (120s) → steady-state (300s at 200 rps) → cooldown (120s).
+
+**Total duration**: ~60 minutes for all 6 services.
+
+### Overriding Parameters
+
+```bash
+# Lower rate for resource-constrained machines
+RATE=100 ./scripts/run-benchmark.sh
+
+# Shorter warmup for Node.js-only runs
+WARMUP_DURATION=60s ./scripts/run-benchmark.sh
+
+# Shorter steady-state for a quick check
+STEADY_STATE_DURATION=60s RATE=50 ./scripts/run-benchmark.sh
+```
 
 ### Manual Testing (Single Service)
 
 To test a single service manually:
 
 ```bash
-cd benchmarks
-
 # Start service
-cd ..
 docker compose --profile spring-uninstrumented up -d
-cd benchmarks
 
 # Wait for health check (30-60 seconds)
 curl http://localhost:8082/songs/Polly/Nirvana
 
-# Run warmup
-SERVICE_URL=http://localhost:8082 k6 run k6/scenarios/warmup.js
-
-# Run steady-state test
-SERVICE_URL=http://localhost:8082 k6 run \
-  --out json=results/manual-test.json \
-  k6/scenarios/steady-state.js
+# Run benchmark (warmup + steady-state in one invocation)
+cd benchmarks
+SERVICE_URL=http://localhost:8082 \
+SERVICE_NAME=spring-uninstrumented \
+SUMMARY_FILE=results/manual-test-summary.json \
+  k6 run \
+    --out json=results/manual-test-raw.json \
+    k6/scenarios/benchmark.js
 
 # Shutdown
-cd ..
 docker compose --profile spring-uninstrumented down -v
 ```
 
-## Benchmark Scenarios
+## Benchmark Scenario (`k6/scenarios/benchmark.js`)
 
-### 1. Warmup (`k6/scenarios/warmup.js`)
+A single script with two named k6 scenarios that run back-to-back.
 
-**Purpose**: Stabilize JVM JIT compilation before measurement
+### Warmup
 
-**Configuration**:
-- Duration: 120 seconds
-- Load: 10 VUs (constant)
-- Endpoint: `GET /songs/Polly/Nirvana`
+**Purpose**: Stabilize JVM JIT compilation / Node.js runtime before measurement.
 
-**Metrics**: Basic HTTP duration tracking (no thresholds)
+| Parameter | Default | Env var |
+|-----------|---------|---------|
+| Executor | `constant-vus` | — |
+| VUs | 10 | `WARMUP_VUS` |
+| Duration | 120s | `WARMUP_DURATION` |
 
-### 2. Steady-State (`k6/scenarios/steady-state.js`)
+No thresholds — warmup traffic is excluded from pass/fail evaluation.
 
-**Purpose**: Measure baseline instrumentation overhead with cached data
+### Steady-State
 
-**Configuration**:
-- Duration: 300 seconds (5 minutes)
-- Load: 50 VUs (constant)
-- Endpoint: `GET /songs/Polly/Nirvana` (cached in DB)
+**Purpose**: Measure instrumentation overhead at equivalent load.
 
-**Metrics**:
-- HTTP request duration (p50, p95, p99)
-- Requests per second
-- Failure rate
+Uses `constant-arrival-rate` so both services receive the same number of requests regardless of their latency. With `constant-vus`, a slower service would naturally process fewer requests, giving it an unfair advantage.
 
-**Thresholds**:
+| Parameter | Default | Env var |
+|-----------|---------|---------|
+| Executor | `constant-arrival-rate` | — |
+| Rate | 200 rps | `RATE` |
+| Duration | 300s | `STEADY_STATE_DURATION` |
+| Pre-allocated VUs | 50 | — |
+| Max VUs | 100 | — |
+
+**Thresholds** (steady-state only):
 - `http_req_failed < 0.01` (less than 1% failures)
 - `http_req_duration p(95) < 2000` (p95 under 2 seconds)
 
@@ -149,37 +160,41 @@ Results are saved to `results/{timestamp}/`:
 
 ```
 results/20260217-143022/
-├── benchmark.log                           # Full orchestration log
-├── k6-spring-uninstrumented-warmup.json    # Warmup metrics
-├── k6-spring-uninstrumented-steady-state.json  # Steady-state metrics
-├── k6-spring-auto-warmup.json
-├── k6-spring-auto-steady-state.json
-├── spring-uninstrumented-timerange.txt     # Datadog correlation timestamps
-└── spring-auto-timerange.txt
+├── benchmark.log                              # Full orchestration log
+├── spring-uninstrumented-summary.json         # Compact per-service summary
+├── spring-auto-summary.json
+├── spring-manual-summary.json
+├── express-uninstrumented-summary.json
+├── express-auto-summary.json
+├── express-manual-summary.json
+├── k6-spring-uninstrumented-raw.json          # Full k6 data (all data points)
+├── k6-spring-auto-raw.json
+├── ...
+├── spring-uninstrumented-timerange.txt        # Datadog correlation timestamps
+└── ...
 ```
 
 ### Viewing k6 Metrics
 
-**Quick summary**:
+**Compare all services at a glance** (summary files):
 ```bash
-cd results/{timestamp}
-cat k6-spring-uninstrumented-steady-state.json | jq '.metrics | {
-  http_req_duration: .http_req_duration.values,
-  http_reqs: .http_reqs.values,
-  http_req_failed: .http_req_failed.values
-}'
+cat results/{timestamp}/*-summary.json | jq -s 'sort_by(.service) | .[] | {service, p95_ms, avg_ms, failure_rate}'
+```
+
+**Deep-dive into raw data** (if needed):
+```bash
+cat results/{timestamp}/k6-spring-auto-raw.json | jq 'select(.type == "Point" and .metric == "http_req_duration")'
 ```
 
 **Key metrics to compare**:
-- `http_req_duration.values.p(95)` - 95th percentile latency (ms)
-- `http_req_duration.values.avg` - Average latency (ms)
-- `http_reqs.values.rate` - Requests per second
-- `http_req_failed.values.rate` - Failure rate
+- `p95_ms` - 95th percentile latency (ms) during steady-state
+- `avg_ms` - Average latency (ms) during steady-state
+- `failure_rate` - Request failure rate during steady-state
 
-**Expected results** (uninstrumented vs auto):
-- P95 latency increase: 5-15%
-- RPS decrease: 5-10%
-- Failure rate: <1% for both
+**Expected results** (uninstrumented vs auto vs manual):
+- P95 latency increase auto vs uninstrumented: 5-15%
+- P95 latency increase manual vs uninstrumented: 2-8% (selective instrumentation)
+- Failure rate: <1% for all variants at 200 rps
 
 ### Viewing Datadog Metrics
 
@@ -187,7 +202,14 @@ The OTel Collector automatically exports container metrics to Datadog during the
 
 #### 1. Navigate to Metrics Explorer
 
-Go to: https://app.datadoghq.com/metric/explorer
+The URL depends on your `DD_SITE_PARAMETER` from `.env`:
+
+```bash
+# Get your site
+grep DD_SITE_PARAMETER ../.env
+# DD_SITE_PARAMETER=datadoghq.eu  →  https://app.datadoghq.eu/metric/explorer
+# DD_SITE_PARAMETER=datadoghq.com →  https://app.datadoghq.com/metric/explorer
+```
 
 #### 2. Set Time Range
 
@@ -266,24 +288,23 @@ This will show both services on the same graph.
 ## Architecture
 
 ```
-k6 (50 VUs)
+k6 (constant-arrival-rate: 200 rps)
     ↓
     GET /songs/Polly/Nirvana
     ↓
-Spring Service (instrumented or not)
+Service (Spring or Express × uninstrumented/auto/manual)
     ↓
-PostgreSQL (cached lookup)
+PostgreSQL (cached lookup — eliminates MusicBrainz variance)
     ↓
 OTLP telemetry → OTel Collector → Datadog
                      ↓
-                 docker_stats receiver → Container metrics → Datadog
+                 docker_stats receiver → Container CPU/memory → Datadog
 ```
 
-**Key components**:
-- **k6**: Generates constant load
-- **Service**: Processes requests, emits OTLP telemetry (instrumented only)
-- **OTel Collector**: Samples container metrics every 10s, exports to Datadog
-- **Datadog**: Visualizes CPU/memory over time
+**Key design decisions**:
+- **`constant-arrival-rate`**: Both services receive equal request pressure; latency differences appear as VU exhaustion rather than reduced throughput
+- **Single cached song**: Eliminates MusicBrainz API latency variance; isolates instrumentation overhead on DB operations
+- **One service at a time**: Prevents resource contention between variants skewing results
 
 ## Troubleshooting
 
@@ -332,79 +353,28 @@ docker compose logs otel-collector | grep datadog
 
 **Solution**: Re-run benchmark with longer warmup or lower VU count
 
-## Future Expansion
+## Reproducibility
 
-### Phase 2: Express Services
-
-Add `songs-express-uninstrumented` and `songs-express-auto`:
-
-1. Update `run-mvp-benchmark.sh`: Add Express services to `SERVICES` array
-2. Reduce warmup to 60s (Node.js stabilizes faster)
-3. Compare Java agent vs Node.js auto-instrumentations
-
-### Phase 3: Manual-Instrumented Services
-
-Benchmark `songs-spring-manual` and `songs-express-manual`:
-
-1. Add manual services to benchmark script
-2. Compare manual vs auto overhead
-3. Quantify optimization potential
-
-### Phase 4: Additional Scenarios
-
-Implement new k6 scenarios:
-
-**Ramp-up** (`ramp-up.js`):
-- 10-minute load progression (0 → 100 VUs)
-- Measure instrumentation impact during scaling
-
-**Cache-miss** (`cache-miss.js`):
-- Random song queries (MusicBrainz API-heavy)
-- Measure instrumentation impact on I/O-bound operations
-
-**Mixed-workload** (`mixed-workload.js`):
-- 80% cached queries, 20% cache misses
-- Realistic production simulation
-
-### Phase 5: Statistical Analysis
-
-Python script for automated analysis:
-
-```python
-# benchmarks/analysis/analyze.py
-import json
-import numpy as np
-from scipy import stats
-
-def calculate_overhead(uninstrumented_metrics, auto_metrics):
-    # Load k6 JSON results
-    # Calculate mean, std, confidence intervals
-    # Perform Welch's t-test
-    # Generate comparison report
-    pass
-```
-
-### Phase 6: Reproducibility
-
-Repeat full benchmark suite 3× to measure stability:
+Run the benchmark suite multiple times to verify result stability:
 
 ```bash
 for run in 1 2 3; do
-  ./scripts/run-mvp-benchmark.sh
+  ./scripts/run-benchmark.sh
   sleep 600  # 10-minute cooldown between runs
 done
 ```
 
-**Success criteria**: Coefficient of variation (CV) < 15% across runs
+**Success criteria**: Coefficient of variation (CV) < 15% across runs for p95 latency and CPU usage.
 
 ## Contributing
 
-When adding new services or scenarios:
+When adding new services:
+1. Add the service to `k6/lib/config.js`
+2. Add it to the `SERVICES`, `PORTS`, and `PROFILES` arrays in `scripts/run-benchmark.sh`
 
-1. **Update config**: Add service to `k6/lib/config.js`
-2. **Create scenario**: Add new scenario to `k6/scenarios/`
-3. **Update orchestration**: Modify `scripts/run-mvp-benchmark.sh`
-4. **Document**: Update this README with new metrics/interpretation
+When adding new k6 scenarios (e.g., cache-miss, ramp-up):
+1. Create `k6/scenarios/<name>.js` following the same `warmup` + `steady_state` pattern
+2. Pass scenario file via env var or add a flag to the orchestration script
 
 ## Resources
 
