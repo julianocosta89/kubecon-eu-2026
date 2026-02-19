@@ -141,7 +141,7 @@ service:
     metrics:
       receivers: [otlp, datadog/connector, docker_stats, hostmetrics]
       processors: [resource]
-      exporters: [datadog]
+      exporters: [debug, datadog]
     logs:
       receivers: [otlp]
       processors: [resource]

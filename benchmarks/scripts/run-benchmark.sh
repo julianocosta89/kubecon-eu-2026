@@ -163,7 +163,10 @@ run_service_benchmark() {
     RATE="${RATE}" \
     WARMUP_DURATION="${WARMUP_DURATION}" \
     STEADY_STATE_DURATION="${STEADY_STATE_DURATION}" \
+    K6_OTEL_GRPC_EXPORTER_INSECURE=true \
+    K6_OTEL_SERVICE_NAME="k6-${service_name}" \
         k6 run \
+            --out opentelemetry \
             --out "json=${RUN_DIR}/k6-${service_name}-raw.json" \
             k6/scenarios/benchmark.js
 
