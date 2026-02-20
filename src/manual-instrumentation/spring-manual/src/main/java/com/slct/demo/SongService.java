@@ -8,14 +8,11 @@ import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Scope;
 import io.opentelemetry.semconv.DbAttributes;
-import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
+import com.slct.demo.config.MediaContentAttributes;
 
 @Service
 public class SongService {
-
-    private static final AttributeKey<String> SONG_TITLE_KEY = AttributeKey.stringKey("song.title");
-    private static final AttributeKey<String> SONG_ARTIST_KEY = AttributeKey.stringKey("song.artist");
 
     private final SongRepository songRepository;
     private final Tracer tracer;
@@ -34,8 +31,8 @@ public class SongService {
                     DbAttributes.DB_OPERATION_NAME, "SELECT",
                     DbAttributes.DB_COLLECTION_NAME, "songs_db.songs",
                     DbAttributes.DB_QUERY_TEXT, SongRepository.FIND_BY_TITLE_AND_ARTIST_QUERY,
-                    SONG_TITLE_KEY, title,
-                    SONG_ARTIST_KEY, artist
+                    MediaContentAttributes.ATTR_MEDIA_SONG_NAME, title,
+                    MediaContentAttributes.ATTR_MEDIA_ARTIST_NAME, artist
                 ))
                 .startSpan();
 
@@ -65,8 +62,8 @@ public class SongService {
                     DbAttributes.DB_OPERATION_NAME, "INSERT",
                     DbAttributes.DB_QUERY_TEXT, "INSERT INTO songs_db.songs (title, artist, album, year, duration_ms, genre) VALUES (?, ?, ?, ?, ?, ?)",
                     DbAttributes.DB_COLLECTION_NAME, "songs_db.songs",
-                    SONG_TITLE_KEY, title,
-                    SONG_ARTIST_KEY, artist
+                    MediaContentAttributes.ATTR_MEDIA_SONG_NAME, title,
+                    MediaContentAttributes.ATTR_MEDIA_ARTIST_NAME, artist
                 ))
                 .startSpan();
 

@@ -13,12 +13,12 @@ app.use(helmet())
 app.disable('x-powered-by')
 
 const opentelemetry = require('@opentelemetry/api')
-const { 
-  ATTR_HTTP_REQUEST_METHOD, 
+const {
+  ATTR_HTTP_REQUEST_METHOD,
   ATTR_HTTP_RESPONSE_STATUS_CODE,
   ATTR_HTTP_ROUTE,
-  ATTR_SERVER_ADDRESS, 
-  ATTR_SERVER_PORT, 
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
   ATTR_URL_FULL,
   ATTR_URL_PATH,
   ATTR_URL_SCHEME,
@@ -29,6 +29,10 @@ const {
   HTTP_REQUEST_METHOD_VALUE_GET,
   ATTR_DB_QUERY_TEXT,
 } = require('@opentelemetry/semantic-conventions')
+const {
+  ATTR_MEDIA_SONG_NAME,
+  ATTR_MEDIA_ARTIST_NAME,
+} = require('./songAttributes')
 
 const requiredEnvVars = ['DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASSWORD']
 const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar])
@@ -79,6 +83,8 @@ app.get('/songs/:title/:artist', async (req, res) => {
       [ATTR_URL_PATH]: `/songs/${title}/${artist}`,
       [ATTR_URL_SCHEME]: req.query.scheme,
       [ATTR_USER_AGENT_ORIGINAL]: req.headers['user-agent'],
+      [ATTR_MEDIA_SONG_NAME]: title,
+      [ATTR_MEDIA_ARTIST_NAME]: artist,
     },
   }, activeContext)
 
@@ -96,6 +102,8 @@ app.get('/songs/:title/:artist', async (req, res) => {
         [ATTR_DB_SYSTEM_NAME]: [DB_SYSTEM_NAME_VALUE_POSTGRESQL],
         [ATTR_DB_QUERY_TEXT]: query,
         [ATTR_DB_OPERATION_NAME]: 'SELECT',
+        [ATTR_MEDIA_SONG_NAME]: title,
+        [ATTR_MEDIA_ARTIST_NAME]: artist,
       },
     }, opentelemetry.trace.setSpan(opentelemetry.context.active(), span))
 
@@ -296,6 +304,8 @@ async function persistSong(title, artist, songData, parentSpan) {
         [ATTR_DB_SYSTEM_NAME]: [DB_SYSTEM_NAME_VALUE_POSTGRESQL],
         [ATTR_DB_QUERY_TEXT]: query,
         [ATTR_DB_OPERATION_NAME]: 'INSERT',
+        [ATTR_MEDIA_SONG_NAME]: title,
+        [ATTR_MEDIA_ARTIST_NAME]: artist,
       },
     }, opentelemetry.trace.setSpan(opentelemetry.context.active(), parentSpan))
 

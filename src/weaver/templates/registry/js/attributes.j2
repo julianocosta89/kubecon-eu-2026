@@ -12,6 +12,12 @@
  * @example {{ attr.examples | join(", ") }}
 {% endif %}
  */
-export const ATTR_{{ attr.name | screaming_snake_case }} = '{{ attr.name }}';
+const ATTR_{{ attr.name | screaming_snake_case }} = '{{ attr.name }}';
 {%- endfor %}
 
+
+module.exports = {
+{% for attr in ctx.attributes %}
+  ATTR_{{ attr.name | screaming_snake_case }},
+{% endfor %}
+};

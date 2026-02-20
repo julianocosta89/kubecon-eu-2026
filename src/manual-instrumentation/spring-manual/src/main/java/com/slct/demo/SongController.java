@@ -22,14 +22,11 @@ import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Scope;
-import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
+import com.slct.demo.config.MediaContentAttributes;
 
 @RestController
 public class SongController {
-
-    private static final AttributeKey<String> SONG_TITLE_KEY = AttributeKey.stringKey("song.title");
-    private static final AttributeKey<String> SONG_ARTIST_KEY = AttributeKey.stringKey("song.artist");
 
     private final SongService songService;
     private final Tracer tracer;
@@ -53,8 +50,8 @@ public class SongController {
                 .setAllAttributes(Attributes.of(
                     HttpAttributes.HTTP_REQUEST_METHOD, HttpAttributes.HttpRequestMethodValues.GET,
                     HttpAttributes.HTTP_ROUTE, "/songs/{title}/{artist}",
-                    SONG_TITLE_KEY, title,
-                    SONG_ARTIST_KEY, artist
+                    MediaContentAttributes.ATTR_MEDIA_SONG_NAME, title,
+                    MediaContentAttributes.ATTR_MEDIA_ARTIST_NAME, artist
                 ))
                 .startSpan();
 
