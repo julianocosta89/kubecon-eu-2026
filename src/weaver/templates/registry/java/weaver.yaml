@@ -1,0 +1,29 @@
+whitespace_control:
+  trim_blocks: true
+  lstrip_blocks: true
+  keep_trailing_newline: true
+
+templates:
+  - pattern: attributes.j2
+    filter: '.groups[] | select(.id == "registry.media_content")'
+    application_mode: each
+
+text_maps:
+  java_type:
+    string: String
+    int: Long
+    double: Double
+    boolean: Boolean
+    string[]: "List<String>"
+    boolean[]: "List<Boolean>"
+    int[]: "List<Long>"
+    double[]: "List<Double>"
+  java_key_factory:
+    string: stringKey
+    int: longKey
+    double: doubleKey
+    boolean: booleanKey
+    string[]: stringArrayKey
+    boolean[]: booleanArrayKey
+    int[]: longArrayKey
+    double[]: doubleArrayKey

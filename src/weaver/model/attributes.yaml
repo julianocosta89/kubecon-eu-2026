@@ -1,0 +1,42 @@
+groups:
+  - id: registry.media_content
+    type: attribute_group
+    display_name: Attributes to identify media content
+    brief: Attributes used to describe media content being queried.
+    attributes:
+      - id: media.song.name
+        type: string
+        brief: The name/title of the song being queried.
+        stability: stable
+        requirement_level: required
+        examples: ["Smells Like Teen Spirit", "Come As You Are", "Lithium", "Something In The Way"]
+      - id: media.artist.name
+        type: string
+        brief: The name of the artist performing the song.
+        stability: stable
+        requirement_level: required
+        examples: ["Nirvana", "Foo Fighters", "Linkin Park", "Slipknot"]
+      - id: media.album.name
+        type: string
+        brief: The name of the album containing the song.
+        stability: stable
+        requirement_level: opt_in
+        examples: ["Nevermind", "In Utero", "Bleach", "Incesticide"]
+      - id: media.song.year
+        type: int
+        brief: The release year of the song.
+        stability: stable
+        requirement_level: opt_in
+        examples: [1991, 1975, 1971, 1976]
+      - id: media.song.duration_ms
+        type: int
+        brief: The duration of the song in milliseconds.
+        stability: stable
+        requirement_level: opt_in
+        examples: [301000, 355000, 183000, 391000]
+      - id: media.song.genre
+        type: string
+        brief: The musical genre of the song.
+        stability: stable
+        requirement_level: opt_in
+        examples: ["Rock", "Punk", "Grunge", "Classical", "Hip Hop"]

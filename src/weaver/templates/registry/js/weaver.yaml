@@ -1,0 +1,9 @@
+whitespace_control:
+  trim_blocks: true
+  lstrip_blocks: true
+  keep_trailing_newline: true
+
+templates:
+  - pattern: attributes.j2
+    filter: '.groups[] | select(.id == "registry.media_content")'
+    application_mode: each

@@ -1,0 +1,6 @@
+name: kubecon-demo
+semconv_version: "0.1.0"
+repository_url: https://github.com/julianocosta89/kubecon-eu-2026
+dependencies:
+  - name: otel
+    registry_path: https://github.com/open-telemetry/semantic-conventions/archive/refs/tags/v1.40.0.zip[model]

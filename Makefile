@@ -1,4 +1,4 @@
-.PHONY: help run run-attach build stop clean logs benchmark
+.PHONY: help run run-attach build stop clean logs benchmark weaver
 
 # Default target
 help:
@@ -25,6 +25,9 @@ help:
 	@echo "Build Services:"
 	@echo "  make build spring-auto            Build specific service"
 	@echo "  make build all                    Build all services"
+	@echo ""
+	@echo "Weaver (semantic convention code generation):"
+	@echo "  make weaver                       Generate all artifacts (Java, JS, Markdown)"
 	@echo ""
 	@echo "Benchmark (requires k6 + OBSERVABILITY_BACKEND=datadog in .env):"
 	@echo "  make benchmark                         Run full benchmark (all 6 services)"
@@ -191,6 +194,10 @@ logs:
 	else \
 		docker compose logs -f songs-$(filter-out $@,$(MAKECMDGOALS)); \
 	fi
+
+# Generate code and docs from semantic conventions
+weaver:
+	@bash src/weaver/generate.sh
 
 # Run benchmarks
 # Options are passed as Make variables and automatically exported to the shell script:
