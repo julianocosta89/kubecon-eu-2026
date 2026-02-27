@@ -264,7 +264,7 @@ jobs:
           key: ${{ steps.cache-key.outputs.cache-key }}
 
       - name: Upload collector image as artifact for current workflow
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
         with:
           name: ${{ steps.cache-key.outputs.cache-key }}
           path: otel-collector-image.tar
@@ -330,7 +330,7 @@ jobs:
           key: ${{ steps.cache-key.outputs.cache-key }}
 
       - name: Upload Jaeger image as artifact for current workflow
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
         with:
           name: ${{ steps.cache-key.outputs.cache-key }}
           path: jaeger-image.tar
@@ -349,7 +349,7 @@ jobs:
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f  # v3
 
       - name: Download collector image artifact
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3  # v8
         with:
           name: ${{ needs.build-otel-collector.outputs.artifact-name }}
           path: ./
@@ -375,7 +375,7 @@ jobs:
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f  # v3
 
       - name: Download collector image artifact
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3  # v8
         with:
           name: ${{ needs.build-otel-collector.outputs.artifact-name }}
           path: ./
@@ -392,7 +392,7 @@ jobs:
           docker load -i otel-collector-image.tar
 
       - name: Download Jaeger image artifact
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3  # v8
         with:
           name: ${{ needs.build-cache-jaeger.outputs.artifact-name }}
           path: ./
@@ -446,7 +446,7 @@ jobs:
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f  # v3
 
       - name: Download collector image artifact
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3  # v8
         with:
           name: ${{ needs.build-otel-collector.outputs.artifact-name }}
           path: ./
@@ -463,7 +463,7 @@ jobs:
           docker load -i otel-collector-image.tar
 
       - name: Download Jaeger image artifact
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3  # v8
         with:
           name: ${{ needs.build-cache-jaeger.outputs.artifact-name }}
           path: ./
@@ -517,7 +517,7 @@ jobs:
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f  # v3
 
       - name: Download collector image artifact
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3  # v8
         with:
           name: ${{ needs.build-otel-collector.outputs.artifact-name }}
           path: ./
@@ -534,7 +534,7 @@ jobs:
           docker load -i otel-collector-image.tar
 
       - name: Download Jaeger image artifact
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3  # v8
         with:
           name: ${{ needs.build-cache-jaeger.outputs.artifact-name }}
           path: ./
@@ -588,7 +588,7 @@ jobs:
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f  # v3
 
       - name: Download collector image artifact
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3  # v8
         with:
           name: ${{ needs.build-otel-collector.outputs.artifact-name }}
           path: ./
@@ -605,7 +605,7 @@ jobs:
           docker load -i otel-collector-image.tar
 
       - name: Download Jaeger image artifact
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3  # v8
         with:
           name: ${{ needs.build-cache-jaeger.outputs.artifact-name }}
           path: ./
