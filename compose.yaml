@@ -192,7 +192,7 @@ services:
   # =============================================================================
   songs-db:
     container_name: songs-db
-    image: postgres:18.2-alpine3.23
+    image: postgres:18.3-alpine3.23
     ports:
       - 5432
     environment:
