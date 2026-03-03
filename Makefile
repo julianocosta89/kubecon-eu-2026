@@ -155,7 +155,7 @@ run-attach:
 # Build services
 build:
 	@if [ "$(filter-out $@,$(MAKECMDGOALS))" = "all" ]; then \
-		docker compose build; \
+		docker compose --profile auto --profile manual --profile uninstrumented build; \
 	elif [ "$(filter-out $@,$(MAKECMDGOALS))" = "" ]; then \
 		echo "Usage: make build <service-name>"; \
 		echo "Available: spring-auto, express-auto, spring-manual, express-manual, spring-uninstrumented, express-uninstrumented, otel-collector, all"; \

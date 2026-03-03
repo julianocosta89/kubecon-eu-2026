@@ -35,9 +35,9 @@ PROFILES=("spring-uninstrumented" "spring-auto"    "spring-manual"
           "express-uninstrumented" "express-auto"  "express-manual")
 
 # k6 configuration (overridable via env)
-RATE="${RATE:-200}"                        # requests/second during steady-state
+RATE="${RATE:-400}"                        # requests/second during steady-state
 WARMUP_DURATION="${WARMUP_DURATION:-120s}" # JVM needs 120s; Node.js stabilizes in 60s
-STEADY_STATE_DURATION="${STEADY_STATE_DURATION:-300s}"
+STEADY_STATE_DURATION="${STEADY_STATE_DURATION:-800s}"
 COOLDOWN="${COOLDOWN:-120}"                # seconds between services
 
 # Ensure k6 is installed
@@ -154,14 +154,23 @@ run_service_benchmark() {
         return 1
     fi
 
-    # Run benchmark (warmup → steady-state in a single k6 invocation)
-    echo -e "${BLUE} Running benchmark (${WARMUP_DURATION} warmup → ${STEADY_STATE_DURATION} steady-state at ${RATE} rps)...${NC}"
+    # Phase 1: Warmup (separate invocation — no OTel export, not sent to Datadog)
+    echo -e "${BLUE} Running warmup (${WARMUP_DURATION})...${NC}"
     cd "$BENCHMARK_DIR"
+    SERVICE_URL="http://localhost:${port}" \
+    WARMUP_VUS="${WARMUP_VUS:-10}" \
+    WARMUP_DURATION="${WARMUP_DURATION}" \
+        k6 run k6/scenarios/warmup.js
+
+    STEADY_STATE_START_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    echo "Steady-state start: ${STEADY_STATE_START_TIME}"
+
+    # Phase 2: Steady-state (metrics exported to OTel Collector / Datadog)
+    echo -e "${BLUE} Running steady-state (${STEADY_STATE_DURATION} at ${RATE} rps)...${NC}"
     SERVICE_URL="http://localhost:${port}" \
     SERVICE_NAME="${service_name}" \
     SUMMARY_FILE="${RUN_DIR}/${service_name}-summary.json" \
     RATE="${RATE}" \
-    WARMUP_DURATION="${WARMUP_DURATION}" \
     STEADY_STATE_DURATION="${STEADY_STATE_DURATION}" \
     K6_OTEL_GRPC_EXPORTER_INSECURE=true \
     K6_OTEL_SERVICE_NAME="k6-${service_name}" \
@@ -174,9 +183,11 @@ run_service_benchmark() {
     echo "End time: ${END_TIME}"
 
     # Save time range for Datadog metric correlation
+    # Use STEADY_STATE_START_TIME to exclude warmup when querying container metrics
     cat > "${RUN_DIR}/${service_name}-timerange.txt" <<EOF
 Service: ${service_name}
 Start: ${START_TIME}
+Steady-state start: ${STEADY_STATE_START_TIME}
 End: ${END_TIME}
 Container: songs-${service_name}
 Port: ${port}

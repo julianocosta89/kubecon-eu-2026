@@ -1,25 +1,17 @@
 import http from 'k6/http';
-import { check, sleep } from 'k6';
-import exec from 'k6/execution';
+import { check } from 'k6';
 import { getServiceUrl, testSong, buildSongEndpoint } from '../lib/config.js';
 
 // Configurable via environment variables
-const WARMUP_VUS = parseInt(__ENV.WARMUP_VUS || '10');
-const WARMUP_DURATION = __ENV.WARMUP_DURATION || '120s';
-const RATE = parseInt(__ENV.RATE || '200');         // requests/second
-const STEADY_STATE_DURATION = __ENV.STEADY_STATE_DURATION || '300s';
+const RATE = parseInt(__ENV.RATE || '400');         // requests/second
+const STEADY_STATE_DURATION = __ENV.STEADY_STATE_DURATION || '600s';
 
 export const options = {
   scenarios: {
-    // Warmup: constant VUs to stabilize JVM JIT / Node.js runtime
-    warmup: {
-      executor: 'constant-vus',
-      vus: WARMUP_VUS,
-      duration: WARMUP_DURATION,
-    },
     // Steady-state: fixed arrival rate so both services receive equal pressure.
     // With constant-vus, a slower service naturally generates fewer requests,
     // making it impossible to compare overhead at equivalent load.
+    // Warmup is handled by a separate k6 invocation (warmup.js).
     steady_state: {
       executor: 'constant-arrival-rate',
       rate: RATE,
@@ -27,11 +19,9 @@ export const options = {
       duration: STEADY_STATE_DURATION,
       preAllocatedVUs: 50,
       maxVUs: 100,
-      startTime: WARMUP_DURATION,
     },
   },
   thresholds: {
-    // Scoped to steady_state only — warmup traffic is excluded
     'http_req_failed{scenario:steady_state}': ['rate<0.01'],
     'http_req_duration{scenario:steady_state}': ['p(95)<2000'],
   },
@@ -55,13 +45,7 @@ export default function () {
       }
     },
   });
-
-  // Think time during warmup only.
-  // constant-arrival-rate manages its own pacing — adding sleep here
-  // would cause k6 to spin up more VUs to compensate, skewing results.
-  if (exec.scenario.name === 'warmup') {
-    sleep(0.1);
-  }
+  // No sleep: constant-arrival-rate manages its own pacing.
 }
 
 export function handleSummary(data) {

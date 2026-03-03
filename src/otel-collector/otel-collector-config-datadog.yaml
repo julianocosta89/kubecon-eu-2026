@@ -27,8 +27,10 @@ receivers:
         endpoint: ${env:OTEL_COLLECTOR_HOST}:${env:OTEL_COLLECTOR_PORT_HTTP}
   docker_stats:
     endpoint: unix:///var/run/docker.sock
+    initial_delay: 300s
   hostmetrics:
     root_path: /hostfs
+    initial_delay: 300s
     scrapers:
       cpu:
         metrics:
