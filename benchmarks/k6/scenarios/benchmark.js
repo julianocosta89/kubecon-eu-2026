@@ -4,7 +4,7 @@ import { getServiceUrl, testSong, buildSongEndpoint } from '../lib/config.js';
 
 // Configurable via environment variables
 const RATE = parseInt(__ENV.RATE || '400');         // requests/second
-const STEADY_STATE_DURATION = __ENV.STEADY_STATE_DURATION || '600s';
+const STEADY_STATE_DURATION = __ENV.STEADY_STATE_DURATION || '800s';
 
 export const options = {
   scenarios: {

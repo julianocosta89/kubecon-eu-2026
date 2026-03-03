@@ -114,6 +114,8 @@ services:
     environment:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
       - OTEL_SERVICE_NAME=songs-express-manual
+      - OTEL_RESOURCE_ATTRIBUTES=service.version=0.0.1
+      - OTEL_NODE_RESOURCE_DETECTORS=env
       - DB_HOST=songs-db
       - DB_PORT=5432
       - DB_USER=postgres
