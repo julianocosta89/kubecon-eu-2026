@@ -25,9 +25,6 @@ RUN apk --update add ca-certificates
 FROM alpine:3.23
 RUN apk --no-cache add curl
 
-ARG USER_UID=10001
-USER ${USER_UID}
-
 COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=build --chmod=755 /build/_build/otelcol /otelcol
 
