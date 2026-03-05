@@ -128,13 +128,6 @@ exporters:
         min_size: 10
         max_size: 100
         flush_timeout: 10s
-  otlp_grpc/jaeger:
-    endpoint: "http://jaeger:4317"
-    tls:
-      insecure: true
-    sending_queue:
-      batch:
-
 
 service:
   extensions: [healthcheckv2, datadog/extension]
@@ -142,7 +135,7 @@ service:
     traces:
       receivers: [otlp]
       processors: [memory_limiter, resource]
-      exporters: [debug, datadog/connector, datadog, otlp_grpc/jaeger]
+      exporters: [debug, datadog/connector, datadog]
     metrics:
       receivers: [otlp, datadog/connector, docker_stats, hostmetrics]
       processors: [memory_limiter, resource]

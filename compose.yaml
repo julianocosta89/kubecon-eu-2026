@@ -49,6 +49,8 @@ services:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
       - OTEL_SERVICE_NAME=songs-express-auto
       - OTEL_RESOURCE_ATTRIBUTES=service.version=0.0.1
+      - OTEL_METRICS_EXPORTER=none
+      - OTEL_LOGS_EXPORTER=none
       - DB_HOST=songs-db
       - DB_PORT=5432
       - DB_USER=postgres
@@ -263,8 +265,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
-          memory: 256M
+          cpus: '1'
+          memory: 1G
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:13133/health/status"]
       interval: 10s
