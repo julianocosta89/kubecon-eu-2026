@@ -40,6 +40,22 @@ WARMUP_DURATION="${WARMUP_DURATION:-120s}" # JVM needs 120s; Node.js stabilizes 
 STEADY_STATE_DURATION="${STEADY_STATE_DURATION:-800s}"
 COOLDOWN="${COOLDOWN:-120}"                # seconds between services
 
+# Validate SERVICE if provided
+if [ -n "$SERVICE" ]; then
+    found=false
+    for svc in "${SERVICES[@]}"; do
+        if [ "$svc" = "$SERVICE" ]; then
+            found=true
+            break
+        fi
+    done
+    if [ "$found" = false ]; then
+        echo -e "${RED}Unknown service: $SERVICE${NC}"
+        echo "Valid services: ${SERVICES[*]}"
+        exit 1
+    fi
+fi
+
 # Ensure k6 is installed
 if ! command -v k6 &> /dev/null; then
     echo -e "${RED}k6 is not installed. Install it with: brew install k6${NC}"
@@ -67,10 +83,14 @@ LOG_FILE="${RUN_DIR}/benchmark.log"
 exec > >(tee -a "$LOG_FILE") 2>&1
 
 echo "=========================================="
-echo "k6 Benchmark - All 6 Service Variants"
+if [ -n "$SERVICE" ]; then
+    echo "k6 Benchmark - ${SERVICE}"
+else
+    echo "k6 Benchmark - All 6 Service Variants"
+fi
 echo "=========================================="
 echo "Timestamp:      $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
-echo "Services:       ${SERVICES[*]}"
+echo "Services:       ${SERVICE:-${SERVICES[*]}}"
 echo "Rate:           ${RATE} rps"
 echo "Warmup:         ${WARMUP_DURATION}"
 echo "Steady-state:   ${STEADY_STATE_DURATION}"
@@ -200,9 +220,9 @@ EOF
     cd "$PROJECT_ROOT"
     docker compose --profile "$profile" down -v
 
-    # Cooldown between services (skip after last)
+    # Cooldown between services (skip after last, skip for single-service runs)
     local last_service="${SERVICES[$((${#SERVICES[@]}-1))]}"
-    if [ "$service_name" != "$last_service" ]; then
+    if [ -z "$SERVICE" ] && [ "$service_name" != "$last_service" ]; then
         echo -e "${YELLOW} Cooldown (${COOLDOWN}s)...${NC}"
         sleep "$COOLDOWN"
     fi
@@ -210,6 +230,7 @@ EOF
 
 # Main benchmark loop
 for i in "${!SERVICES[@]}"; do
+    [ -n "$SERVICE" ] && [ "${SERVICES[$i]}" != "$SERVICE" ] && continue
     run_service_benchmark "${SERVICES[$i]}" "${PORTS[$i]}" "${PROFILES[$i]}"
 done
 
