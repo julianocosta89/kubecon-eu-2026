@@ -20,6 +20,9 @@ receivers:
         endpoint: ${env:OTEL_COLLECTOR_HOST}:${env:OTEL_COLLECTOR_PORT_HTTP}
 
 processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 1000
   resource:
     attributes:
       - key: deployment.environment.name
@@ -41,9 +44,9 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [resource]
+      processors: [memory_limiter, resource]
       exporters: [debug, otlp_grpc/jaeger]
     metrics:
       receivers: [otlp]
-      processors: [resource]
+      processors: [memory_limiter, resource]
       exporters: [debug]

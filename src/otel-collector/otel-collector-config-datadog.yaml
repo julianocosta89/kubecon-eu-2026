@@ -100,6 +100,9 @@ receivers:
             enabled: true
 
 processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 1000
   resource:
     attributes:
       - key: deployment.environment.name
@@ -138,13 +141,27 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [resource]
+      processors: [memory_limiter, resource]
       exporters: [debug, datadog/connector, datadog, otlp_grpc/jaeger]
     metrics:
       receivers: [otlp, datadog/connector, docker_stats, hostmetrics]
-      processors: [resource]
+      processors: [memory_limiter, resource]
       exporters: [debug, datadog]
     logs:
       receivers: [otlp]
-      processors: [resource]
+      processors: [memory_limiter, resource]
       exporters: [datadog]
+  telemetry:
+    metrics:
+      readers:
+        - periodic:
+            exporter:
+              otlp:
+                protocol: http/protobuf
+                endpoint: https://otlp.${DD_SITE_PARAMETER}/v1/metrics
+                temporality_preference: delta
+                headers:
+                  - name: dd-api-key
+                    value: ${DD_API_KEY}
+                  - name: dd-otel-metric-config
+                    value: '{"resource_attributes_as_tags": true}'
