@@ -1,5 +1,5 @@
 # Build stage
-FROM gradle:9.3-jdk25 AS build
+FROM gradle:9.4-jdk25 AS build
 WORKDIR /app
 COPY gradle/ gradle/
 COPY gradlew build.gradle settings.gradle ./
