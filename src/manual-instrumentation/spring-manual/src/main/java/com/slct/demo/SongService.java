@@ -14,6 +14,20 @@ import com.slct.demo.config.MediaContentAttributes;
 @Service
 public class SongService {
 
+    private static final Attributes SELECT_BASE_ATTRS = Attributes.of(
+        DbAttributes.DB_SYSTEM_NAME, DbAttributes.DbSystemNameValues.POSTGRESQL,
+        DbAttributes.DB_OPERATION_NAME, "SELECT",
+        DbAttributes.DB_COLLECTION_NAME, "songs_db.songs",
+        DbAttributes.DB_QUERY_TEXT, SongRepository.FIND_BY_TITLE_AND_ARTIST_QUERY
+    );
+
+    private static final Attributes INSERT_BASE_ATTRS = Attributes.of(
+        DbAttributes.DB_SYSTEM_NAME, DbAttributes.DbSystemNameValues.POSTGRESQL,
+        DbAttributes.DB_OPERATION_NAME, "INSERT",
+        DbAttributes.DB_COLLECTION_NAME, "songs_db.songs",
+        DbAttributes.DB_QUERY_TEXT, "INSERT INTO songs_db.songs (title, artist, album, year, duration_ms, genre) VALUES (?, ?, ?, ?, ?, ?)"
+    );
+
     private final SongRepository songRepository;
     private final Tracer tracer;
 
@@ -23,17 +37,11 @@ public class SongService {
     }
 
     public Song getSongFromDatabase(String title, String artist) {
-        // Create database client span - span name should be the operation name
         Span span = tracer.spanBuilder("SELECT songs_db.songs")
                 .setSpanKind(SpanKind.CLIENT)
-                .setAllAttributes(Attributes.of(
-                    DbAttributes.DB_SYSTEM_NAME, DbAttributes.DbSystemNameValues.POSTGRESQL,
-                    DbAttributes.DB_OPERATION_NAME, "SELECT",
-                    DbAttributes.DB_COLLECTION_NAME, "songs_db.songs",
-                    DbAttributes.DB_QUERY_TEXT, SongRepository.FIND_BY_TITLE_AND_ARTIST_QUERY,
-                    MediaContentAttributes.ATTR_MEDIA_SONG_NAME, title,
-                    MediaContentAttributes.ATTR_MEDIA_ARTIST_NAME, artist
-                ))
+                .setAllAttributes(SELECT_BASE_ATTRS)
+                .setAttribute(MediaContentAttributes.ATTR_MEDIA_SONG_NAME, title)
+                .setAttribute(MediaContentAttributes.ATTR_MEDIA_ARTIST_NAME, artist)
                 .startSpan();
 
         try (Scope scope = span.makeCurrent()) {
@@ -54,17 +62,11 @@ public class SongService {
     }
 
     public Song saveSong(String title, String artist, String album, Integer year, Integer durationMs, String genre) {
-        // Create database client span - span name should be the operation name
         Span span = tracer.spanBuilder("INSERT into songs_db.songs")
                 .setSpanKind(SpanKind.CLIENT)
-                .setAllAttributes(Attributes.of(
-                    DbAttributes.DB_SYSTEM_NAME, DbAttributes.DbSystemNameValues.POSTGRESQL,
-                    DbAttributes.DB_OPERATION_NAME, "INSERT",
-                    DbAttributes.DB_QUERY_TEXT, "INSERT INTO songs_db.songs (title, artist, album, year, duration_ms, genre) VALUES (?, ?, ?, ?, ?, ?)",
-                    DbAttributes.DB_COLLECTION_NAME, "songs_db.songs",
-                    MediaContentAttributes.ATTR_MEDIA_SONG_NAME, title,
-                    MediaContentAttributes.ATTR_MEDIA_ARTIST_NAME, artist
-                ))
+                .setAllAttributes(INSERT_BASE_ATTRS)
+                .setAttribute(MediaContentAttributes.ATTR_MEDIA_SONG_NAME, title)
+                .setAttribute(MediaContentAttributes.ATTR_MEDIA_ARTIST_NAME, artist)
                 .startSpan();
 
         try (Scope scope = span.makeCurrent()) {

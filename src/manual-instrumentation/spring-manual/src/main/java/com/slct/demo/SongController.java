@@ -28,6 +28,17 @@ import com.slct.demo.config.MediaContentAttributes;
 @RestController
 public class SongController {
 
+    private static final Attributes SERVER_SPAN_BASE_ATTRS = Attributes.of(
+        HttpAttributes.HTTP_REQUEST_METHOD, HttpAttributes.HttpRequestMethodValues.GET,
+        HttpAttributes.HTTP_ROUTE, "/songs/{title}/{artist}"
+    );
+
+    private static final Attributes MUSICBRAINZ_SPAN_BASE_ATTRS = Attributes.of(
+        HttpAttributes.HTTP_REQUEST_METHOD, HttpAttributes.HttpRequestMethodValues.GET,
+        ServerAttributes.SERVER_ADDRESS, "musicbrainz.org",
+        ServerAttributes.SERVER_PORT, 443L
+    );
+
     private final SongService songService;
     private final Tracer tracer;
 
@@ -47,19 +58,16 @@ public class SongController {
     public String getSongs(@PathVariable String title, @PathVariable String artist) {
         Span span = tracer.spanBuilder("GET /songs/{title}/{artist}")
                 .setSpanKind(SpanKind.SERVER)
-                .setAllAttributes(Attributes.of(
-                    HttpAttributes.HTTP_REQUEST_METHOD, HttpAttributes.HttpRequestMethodValues.GET,
-                    HttpAttributes.HTTP_ROUTE, "/songs/{title}/{artist}",
-                    MediaContentAttributes.ATTR_MEDIA_SONG_NAME, title,
-                    MediaContentAttributes.ATTR_MEDIA_ARTIST_NAME, artist
-                ))
+                .setAllAttributes(SERVER_SPAN_BASE_ATTRS)
+                .setAttribute(MediaContentAttributes.ATTR_MEDIA_SONG_NAME, title)
+                .setAttribute(MediaContentAttributes.ATTR_MEDIA_ARTIST_NAME, artist)
+                .setAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, 200L)
                 .startSpan();
 
         try (Scope scope = span.makeCurrent()) {
             Song song = songService.getSongFromDatabase(title, artist);
 
             if (song != null) {
-                span.setAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, 200L);
                 return String.format("{\"title\":\"%s\",\"artist\":\"%s\",\"album\":\"%s\",\"year\":%s,\"duration_ms\":%s,\"genre\":\"%s\"}",
                         song.getTitle(), song.getArtist(), song.getAlbum(), song.getYear(), song.getDurationMs(), song.getGenre());
             } else {
@@ -198,12 +206,10 @@ public class SongController {
                             // Save to database
                             Song savedSong = songService.saveSong(title, artist, album, year, durationMs, genre);
 
-                            span.setAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, 200L);
                             return String.format("{\"title\":\"%s\",\"artist\":\"%s\",\"album\":\"%s\",\"year\":%s,\"duration_ms\":%s,\"genre\":\"%s\"}",
                                     savedSong.getTitle(), savedSong.getArtist(), savedSong.getAlbum(), savedSong.getYear(), savedSong.getDurationMs(), savedSong.getGenre());
                         } catch (Exception e) {
                             // Return basic song info even if saving fails
-                            span.setAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, 200L);
                             return String.format("{\"title\":\"%s\",\"artist\":\"%s\",\"album\":\"%s\",\"year\":%s,\"duration_ms\":%s,\"genre\":\"%s\"}",
                                     title, artist, album, year, durationMs, genre);
                         }
@@ -235,14 +241,10 @@ public class SongController {
         String url = String.format("%s?query=recording:\"%s\" AND artist:\"%s\"&fmt=json&limit=20",
                 musicServiceUrl, title, artist);
 
-        // Create HTTP client span for external API call - span name should be HTTP {method} format
         Span span = tracer.spanBuilder("GET")
                 .setSpanKind(SpanKind.CLIENT)
-                .setAllAttributes(Attributes.of(
-                    HttpAttributes.HTTP_REQUEST_METHOD, HttpAttributes.HttpRequestMethodValues.GET,
-                    UrlAttributes.URL_FULL, url,
-                    ServerAttributes.SERVER_ADDRESS, "musicbrainz.org",
-                    ServerAttributes.SERVER_PORT, 443L))
+                .setAllAttributes(MUSICBRAINZ_SPAN_BASE_ATTRS)
+                .setAttribute(UrlAttributes.URL_FULL, url)
                 .startSpan();
 
         try (Scope scope = span.makeCurrent()) {
