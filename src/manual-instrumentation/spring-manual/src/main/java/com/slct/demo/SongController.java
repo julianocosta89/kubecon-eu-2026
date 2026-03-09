@@ -21,7 +21,9 @@ import io.opentelemetry.semconv.ServerAttributes;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
+import io.opentelemetry.context.propagation.TextMapPropagator;
 import io.opentelemetry.api.common.Attributes;
 import com.slct.demo.config.MediaContentAttributes;
 
@@ -41,6 +43,7 @@ public class SongController {
 
     private final SongService songService;
     private final Tracer tracer;
+    private final TextMapPropagator propagator;
 
     @Value("${MUSIC_SERVICE_URL:https://musicbrainz.org/ws/2/recording/}")
     private String musicServiceUrl;
@@ -49,25 +52,27 @@ public class SongController {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private static final Logger logger = LoggerFactory.getLogger(SongController.class);
 
-    public SongController(SongService songService, Tracer tracer) {
+    public SongController(SongService songService, Tracer tracer, TextMapPropagator propagator) {
         this.songService = songService;
         this.tracer = tracer;
+        this.propagator = propagator;
     }
 
     @GetMapping("/songs/{title}/{artist}")
     public String getSongs(@PathVariable String title, @PathVariable String artist) {
+        // HTTP_RESPONSE_STATUS_CODE is set per outcome below, not at span start.
         Span span = tracer.spanBuilder("GET /songs/{title}/{artist}")
                 .setSpanKind(SpanKind.SERVER)
                 .setAllAttributes(SERVER_SPAN_BASE_ATTRS)
                 .setAttribute(MediaContentAttributes.ATTR_MEDIA_SONG_NAME, title)
                 .setAttribute(MediaContentAttributes.ATTR_MEDIA_ARTIST_NAME, artist)
-                .setAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, 200L)
                 .startSpan();
 
         try (Scope scope = span.makeCurrent()) {
             Song song = songService.getSongFromDatabase(title, artist);
 
             if (song != null) {
+                span.setAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, 200L);
                 return String.format("{\"title\":\"%s\",\"artist\":\"%s\",\"album\":\"%s\",\"year\":%s,\"duration_ms\":%s,\"genre\":\"%s\"}",
                         song.getTitle(), song.getArtist(), song.getAlbum(), song.getYear(), song.getDurationMs(), song.getGenre());
             } else {
@@ -206,15 +211,18 @@ public class SongController {
                             // Save to database
                             Song savedSong = songService.saveSong(title, artist, album, year, durationMs, genre);
 
+                            span.setAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, 200L);
                             return String.format("{\"title\":\"%s\",\"artist\":\"%s\",\"album\":\"%s\",\"year\":%s,\"duration_ms\":%s,\"genre\":\"%s\"}",
                                     savedSong.getTitle(), savedSong.getArtist(), savedSong.getAlbum(), savedSong.getYear(), savedSong.getDurationMs(), savedSong.getGenre());
                         } catch (Exception e) {
                             // Return basic song info even if saving fails
+                            span.setAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, 200L);
                             return String.format("{\"title\":\"%s\",\"artist\":\"%s\",\"album\":\"%s\",\"year\":%s,\"duration_ms\":%s,\"genre\":\"%s\"}",
                                     title, artist, album, year, durationMs, genre);
                         }
                     } else {
                         span.setAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, 404L);
+                        span.setStatus(StatusCode.ERROR);
                         return String.format("{\"message\":\"Song not found for title: %s, artist: %s\"}",
                                 title, artist);
                     }
@@ -250,6 +258,8 @@ public class SongController {
         try (Scope scope = span.makeCurrent()) {
             HttpHeaders headers = new HttpHeaders();
             headers.set("User-Agent", "otel-demo/1.0");
+            // Inject W3C trace context (traceparent / tracestate) into outbound headers.
+            propagator.inject(Context.current(), headers, (carrier, key, value) -> carrier.set(key, value));
 
             HttpEntity<String> entity = new HttpEntity<>(headers);
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
