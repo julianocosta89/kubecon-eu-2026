@@ -14,18 +14,22 @@ import com.slct.demo.config.MediaContentAttributes;
 @Service
 public class SongService {
 
+    // db.collection.name is the bare table name; the database name goes in db.namespace.
+    // Span names follow the "{db.operation.name} {db.collection.name}" convention.
     private static final Attributes SELECT_BASE_ATTRS = Attributes.of(
         DbAttributes.DB_SYSTEM_NAME, DbAttributes.DbSystemNameValues.POSTGRESQL,
         DbAttributes.DB_OPERATION_NAME, "SELECT",
-        DbAttributes.DB_COLLECTION_NAME, "songs_db.songs",
+        DbAttributes.DB_COLLECTION_NAME, "songs",
+        DbAttributes.DB_NAMESPACE, "songs_db",
         DbAttributes.DB_QUERY_TEXT, SongRepository.FIND_BY_TITLE_AND_ARTIST_QUERY
     );
 
     private static final Attributes INSERT_BASE_ATTRS = Attributes.of(
         DbAttributes.DB_SYSTEM_NAME, DbAttributes.DbSystemNameValues.POSTGRESQL,
         DbAttributes.DB_OPERATION_NAME, "INSERT",
-        DbAttributes.DB_COLLECTION_NAME, "songs_db.songs",
-        DbAttributes.DB_QUERY_TEXT, "INSERT INTO songs_db.songs (title, artist, album, year, duration_ms, genre) VALUES (?, ?, ?, ?, ?, ?)"
+        DbAttributes.DB_COLLECTION_NAME, "songs",
+        DbAttributes.DB_NAMESPACE, "songs_db",
+        DbAttributes.DB_QUERY_TEXT, "INSERT INTO songs (title, artist, album, year, duration_ms, genre) VALUES (?, ?, ?, ?, ?, ?)"
     );
 
     private final SongRepository songRepository;
@@ -37,7 +41,7 @@ public class SongService {
     }
 
     public Song getSongFromDatabase(String title, String artist) {
-        Span span = tracer.spanBuilder("SELECT songs_db.songs")
+        Span span = tracer.spanBuilder("SELECT songs")
                 .setSpanKind(SpanKind.CLIENT)
                 .setAllAttributes(SELECT_BASE_ATTRS)
                 .setAttribute(MediaContentAttributes.ATTR_MEDIA_SONG_NAME, title)
@@ -62,12 +66,21 @@ public class SongService {
     }
 
     public Song saveSong(String title, String artist, String album, Integer year, Integer durationMs, String genre) {
-        Span span = tracer.spanBuilder("INSERT into songs_db.songs")
+        Span span = tracer.spanBuilder("INSERT songs")
                 .setSpanKind(SpanKind.CLIENT)
                 .setAllAttributes(INSERT_BASE_ATTRS)
                 .setAttribute(MediaContentAttributes.ATTR_MEDIA_SONG_NAME, title)
                 .setAttribute(MediaContentAttributes.ATTR_MEDIA_ARTIST_NAME, artist)
+                .setAttribute(MediaContentAttributes.ATTR_MEDIA_ALBUM_NAME, album)
+                .setAttribute(MediaContentAttributes.ATTR_MEDIA_SONG_GENRE, genre)
                 .startSpan();
+
+        if (year != null) {
+            span.setAttribute(MediaContentAttributes.ATTR_MEDIA_SONG_YEAR, year.longValue());
+        }
+        if (durationMs != null) {
+            span.setAttribute(MediaContentAttributes.ATTR_MEDIA_SONG_DURATION_MS, durationMs.longValue());
+        }
 
         try (Scope scope = span.makeCurrent()) {
             Song song = new Song(title, artist, album, year, durationMs, genre);
