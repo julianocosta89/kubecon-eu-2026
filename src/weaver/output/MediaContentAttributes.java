@@ -3,7 +3,6 @@
 package com.slct.demo.config;
 
 import io.opentelemetry.api.common.AttributeKey;
-import java.util.List;
 
 /**
  * Attributes used to describe media content being queried.
