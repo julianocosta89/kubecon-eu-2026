@@ -18,7 +18,7 @@ export const options = {
       timeUnit: '1s',
       duration: STEADY_STATE_DURATION,
       preAllocatedVUs: 50,
-      maxVUs: 100,
+      maxVUs: 200,
     },
   },
   thresholds: {
@@ -69,6 +69,7 @@ export function handleSummary(data) {
     p95_ms: durationMetric?.values['p(95)'],
     avg_ms: durationMetric?.values.avg,
     failure_rate: failureMetric?.values.rate,
+    dropped_iterations: data.metrics.dropped_iterations?.values.count ?? 0,
   };
 
   const result = {

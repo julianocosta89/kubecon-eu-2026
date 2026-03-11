@@ -1,32 +1,3 @@
-// Service endpoint configuration for k6 benchmarks
-
-export const services = {
-  'spring-uninstrumented': {
-    port: 8082,
-    profile: 'spring-uninstrumented',
-  },
-  'spring-auto': {
-    port: 8080,
-    profile: 'spring-auto',
-  },
-  'spring-manual': {
-    port: 8081,
-    profile: 'spring-manual',
-  },
-  'express-uninstrumented': {
-    port: 3002,
-    profile: 'express-uninstrumented',
-  },
-  'express-auto': {
-    port: 3000,
-    profile: 'express-auto',
-  },
-  'express-manual': {
-    port: 3001,
-    profile: 'express-manual',
-  },
-};
-
 // Test data - single song for consistent benchmarking
 export const testSong = {
   title: 'Polly',

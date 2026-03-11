@@ -178,7 +178,7 @@ run_service_benchmark() {
     echo -e "${BLUE} Running warmup (${WARMUP_DURATION})...${NC}"
     cd "$BENCHMARK_DIR"
     SERVICE_URL="http://localhost:${port}" \
-    WARMUP_VUS="${WARMUP_VUS:-10}" \
+    RATE="${RATE}" \
     WARMUP_DURATION="${WARMUP_DURATION}" \
         k6 run k6/scenarios/warmup.js
 

@@ -77,7 +77,7 @@ This will benchmark all 6 services sequentially:
 1. `spring-uninstrumented` → `spring-auto` → `spring-manual`
 2. `express-uninstrumented` → `express-auto` → `express-manual`
 
-Each service runs: warmup (120s) → steady-state (300s at 200 rps) → cooldown (120s).
+Each service runs: warmup (120s) → steady-state (800s at 400 rps) → cooldown (120s).
 
 **Total duration**: ~60 minutes for all 6 services.
 
@@ -105,8 +105,12 @@ docker compose --profile spring-uninstrumented up -d
 # Wait for health check (30-60 seconds)
 curl http://localhost:8082/songs/Polly/Nirvana
 
-# Run benchmark (warmup + steady-state in one invocation)
+# Warmup — stabilizes JVM JIT / Node.js runtime before measurement
 cd benchmarks
+SERVICE_URL=http://localhost:8082 \
+  k6 run k6/scenarios/warmup.js
+
+# Steady-state measurement
 SERVICE_URL=http://localhost:8082 \
 SERVICE_NAME=spring-uninstrumented \
 SUMMARY_FILE=results/manual-test-summary.json \
@@ -128,9 +132,11 @@ A single script with two named k6 scenarios that run back-to-back.
 
 | Parameter | Default | Env var |
 |-----------|---------|---------|
-| Executor | `constant-vus` | — |
-| VUs | 10 | `WARMUP_VUS` |
+| Executor | `constant-arrival-rate` | — |
+| Rate | 400 rps | `RATE` |
 | Duration | 120s | `WARMUP_DURATION` |
+| Pre-allocated VUs | 50 | — |
+| Max VUs | 200 | — |
 
 No thresholds — warmup traffic is excluded from pass/fail evaluation.
 
@@ -143,10 +149,10 @@ Uses `constant-arrival-rate` so both services receive the same number of request
 | Parameter | Default | Env var |
 |-----------|---------|---------|
 | Executor | `constant-arrival-rate` | — |
-| Rate | 200 rps | `RATE` |
-| Duration | 300s | `STEADY_STATE_DURATION` |
+| Rate | 400 rps | `RATE` |
+| Duration | 800s | `STEADY_STATE_DURATION` |
 | Pre-allocated VUs | 50 | — |
-| Max VUs | 100 | — |
+| Max VUs | 200 | — |
 
 **Thresholds** (steady-state only):
 - `http_req_failed < 0.01` (less than 1% failures)
