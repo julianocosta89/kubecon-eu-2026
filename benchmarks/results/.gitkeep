@@ -1,0 +1,2 @@
+# This directory stores k6 benchmark results
+# Files are organized by timestamp: results/{timestamp}/k6-{service}-{scenario}.json
