@@ -146,6 +146,7 @@ service:
       exporters: [datadog]
   telemetry:
     metrics:
+      level: detailed
       readers:
         - periodic:
             exporter:
