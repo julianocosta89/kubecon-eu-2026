@@ -89,6 +89,7 @@ app.get('/songs/:title/:artist', async (req, res) => {
   }, activeContext)
 
   let client
+  client = await pool.connect() 
   try {
     const query = `
       SELECT title, artist, album, year, duration_ms, genre
@@ -106,8 +107,6 @@ app.get('/songs/:title/:artist', async (req, res) => {
         [ATTR_MEDIA_ARTIST_NAME]: artist,
       },
     }, opentelemetry.trace.setSpan(opentelemetry.context.active(), span))
-
-    client = await pool.connect()  
     
     const result = await client.query(query, [title, artist])
 
