@@ -222,7 +222,7 @@ jobs:
 
       - name: Check cache for collector image
         id: check-cache
-        uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306  # v5
+        uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7  # v5
         with:
           path: otel-collector-image.tar
           key: ${{ steps.cache-key.outputs.cache-key }}
@@ -258,7 +258,7 @@ jobs:
 
       - name: Save collector image to cache
         if: steps.set-outputs.outputs.cache-hit != 'true'
-        uses: actions/cache/save@cdf6c1fa76f9f475f3d7449005a359c84ca0f306  # v5
+        uses: actions/cache/save@668228422ae6a00e4ad889ee87cd7109ec5666a7  # v5
         with:
           path: otel-collector-image.tar
           key: ${{ steps.cache-key.outputs.cache-key }}
@@ -294,7 +294,7 @@ jobs:
 
       - name: Check cache for Jaeger image
         id: check-cache
-        uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306  # v5
+        uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7  # v5
         with:
           path: jaeger-image.tar
           key: ${{ steps.cache-key.outputs.cache-key }}
@@ -324,7 +324,7 @@ jobs:
 
       - name: Save Jaeger image to cache
         if: steps.set-outputs.outputs.cache-hit != 'true'
-        uses: actions/cache/save@cdf6c1fa76f9f475f3d7449005a359c84ca0f306  # v5
+        uses: actions/cache/save@668228422ae6a00e4ad889ee87cd7109ec5666a7  # v5
         with:
           path: jaeger-image.tar
           key: ${{ steps.cache-key.outputs.cache-key }}
@@ -382,7 +382,7 @@ jobs:
 
       - name: Restore collector image from cache
         if: needs.build-otel-collector.outputs.cache-hit == 'true'
-        uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306  # v5
+        uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7  # v5
         with:
           path: otel-collector-image.tar
           key: ${{ needs.build-otel-collector.outputs.cache-key }}
@@ -399,7 +399,7 @@ jobs:
 
       - name: Restore Jaeger image from cache
         if: needs.build-cache-jaeger.outputs.cache-hit == 'true'
-        uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306  # v5
+        uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7  # v5
         with:
           path: jaeger-image.tar
           key: ${{ needs.build-cache-jaeger.outputs.cache-key }}
@@ -453,7 +453,7 @@ jobs:
 
       - name: Restore collector image from cache
         if: needs.build-otel-collector.outputs.cache-hit == 'true'
-        uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306  # v5
+        uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7  # v5
         with:
           path: otel-collector-image.tar
           key: ${{ needs.build-otel-collector.outputs.cache-key }}
@@ -470,7 +470,7 @@ jobs:
 
       - name: Restore Jaeger image from cache
         if: needs.build-cache-jaeger.outputs.cache-hit == 'true'
-        uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306  # v5
+        uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7  # v5
         with:
           path: jaeger-image.tar
           key: ${{ needs.build-cache-jaeger.outputs.cache-key }}
@@ -524,7 +524,7 @@ jobs:
 
       - name: Restore collector image from cache
         if: needs.build-otel-collector.outputs.cache-hit == 'true'
-        uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306  # v5
+        uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7  # v5
         with:
           path: otel-collector-image.tar
           key: ${{ needs.build-otel-collector.outputs.cache-key }}
@@ -541,7 +541,7 @@ jobs:
 
       - name: Restore Jaeger image from cache
         if: needs.build-cache-jaeger.outputs.cache-hit == 'true'
-        uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306  # v5
+        uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7  # v5
         with:
           path: jaeger-image.tar
           key: ${{ needs.build-cache-jaeger.outputs.cache-key }}
@@ -595,7 +595,7 @@ jobs:
 
       - name: Restore collector image from cache
         if: needs.build-otel-collector.outputs.cache-hit == 'true'
-        uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306  # v5
+        uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7  # v5
         with:
           path: otel-collector-image.tar
           key: ${{ needs.build-otel-collector.outputs.cache-key }}
@@ -612,7 +612,7 @@ jobs:
 
       - name: Restore Jaeger image from cache
         if: needs.build-cache-jaeger.outputs.cache-hit == 'true'
-        uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306  # v5
+        uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7  # v5
         with:
           path: jaeger-image.tar
           key: ${{ needs.build-cache-jaeger.outputs.cache-key }}
