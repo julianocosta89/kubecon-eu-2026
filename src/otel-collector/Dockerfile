@@ -1,4 +1,4 @@
-FROM golang:1.26.1 AS build
+FROM golang:1.26.2 AS build
 
 ARG TARGETARCH
 ARG BUILDER_VERSION=0.147.0
