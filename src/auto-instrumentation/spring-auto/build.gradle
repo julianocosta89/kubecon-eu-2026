@@ -21,6 +21,6 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'com.fasterxml.jackson.core:jackson-databind'
-	implementation 'io.opentelemetry:opentelemetry-api:1.60.1'
+	implementation 'io.opentelemetry:opentelemetry-api:1.61.0'
 	runtimeOnly 'org.postgresql:postgresql:42.7.10'
 }
