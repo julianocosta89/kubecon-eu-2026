@@ -9,7 +9,7 @@ RUN ./gradlew build --no-daemon
 
 
 # Runtime stage
-FROM eclipse-temurin:25.0.2_10-jre-alpine-3.23
+FROM eclipse-temurin:25.0.3_9-jre-alpine-3.23
 
 RUN addgroup --system app && adduser --system --ingroup app app
 WORKDIR /app
