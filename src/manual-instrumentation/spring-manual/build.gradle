@@ -29,5 +29,5 @@ dependencies {
 	implementation 'io.opentelemetry:opentelemetry-exporter-otlp'
 	implementation 'io.opentelemetry.semconv:opentelemetry-semconv:1.40.0'
 
-	runtimeOnly 'org.postgresql:postgresql:42.7.10'
+	runtimeOnly 'org.postgresql:postgresql:42.7.11'
 }
