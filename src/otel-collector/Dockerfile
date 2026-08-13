@@ -1,4 +1,4 @@
-FROM golang:1.26.1 AS build
+FROM golang:1.26.5 AS build
 
 ARG TARGETARCH
 ARG BUILDER_VERSION=0.150.0
@@ -16,13 +16,13 @@ ENV CGO_ENABLED=0
 RUN ocb --config ./manifest.yaml
 
 
-FROM alpine:3.23 AS certs
+FROM alpine:3.24 AS certs
 RUN apk --update add ca-certificates
 
 
 # Final step runs the custom Collector binary
 # with its configuration file
-FROM alpine:3.23
+FROM alpine:3.24
 RUN apk --no-cache add curl
 
 COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
