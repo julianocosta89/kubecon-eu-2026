@@ -100,7 +100,7 @@ jobs:
 
       - name: Build Spring Auto Service
         run: |
-          docker compose build songs-spring-auto
+          docker buildx bake -f compose.yaml --set *.cache-from=type=gha --set *.cache-to=type=gha,mode=max songs-spring-auto
         env:
           OBSERVABILITY_BACKEND: jaeger
 
@@ -118,7 +118,7 @@ jobs:
 
       - name: Build Spring Manual Service
         run: |
-          docker compose build songs-spring-manual
+          docker buildx bake -f compose.yaml --set *.cache-from=type=gha --set *.cache-to=type=gha,mode=max songs-spring-manual
         env:
           OBSERVABILITY_BACKEND: jaeger
 
@@ -136,7 +136,7 @@ jobs:
 
       - name: Build Spring Uninstrumented Service
         run: |
-          docker compose build songs-spring-uninstrumented
+          docker buildx bake -f compose.yaml --set *.cache-from=type=gha --set *.cache-to=type=gha,mode=max songs-spring-uninstrumented
         env:
           OBSERVABILITY_BACKEND: jaeger
 
@@ -154,7 +154,7 @@ jobs:
 
       - name: Build Express Auto Service
         run: |
-          docker compose build songs-express-auto
+          docker buildx bake -f compose.yaml --set *.cache-from=type=gha --set *.cache-to=type=gha,mode=max songs-express-auto
         env:
           OBSERVABILITY_BACKEND: jaeger
 
@@ -172,7 +172,7 @@ jobs:
 
       - name: Build Express Manual Service
         run: |
-          docker compose build songs-express-manual
+          docker buildx bake -f compose.yaml --set *.cache-from=type=gha --set *.cache-to=type=gha,mode=max songs-express-manual
         env:
           OBSERVABILITY_BACKEND: jaeger
 
@@ -190,7 +190,7 @@ jobs:
 
       - name: Build Express Uninstrumented Service
         run: |
-          docker compose build songs-express-uninstrumented
+          docker buildx bake -f compose.yaml --set *.cache-from=type=gha --set *.cache-to=type=gha,mode=max songs-express-uninstrumented
         env:
           OBSERVABILITY_BACKEND: jaeger
 
@@ -243,7 +243,7 @@ jobs:
       - name: Build OpenTelemetry Collector
         if: steps.set-outputs.outputs.cache-hit != 'true'
         run: |
-          docker compose build otel-collector
+          docker buildx bake -f compose.yaml --set *.cache-from=type=gha --set *.cache-to=type=gha,mode=max otel-collector
           # Get the built image name using docker compose
           IMAGE_NAME=$(docker compose images -q otel-collector)
           if [ -z "$IMAGE_NAME" ]; then

@@ -7,7 +7,6 @@
 *~
 .DS_Store
 Thumbs.db
-CLAUDE.md
 
 # Build artifacts and dependencies
 **/build/

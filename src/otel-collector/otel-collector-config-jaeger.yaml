@@ -30,8 +30,6 @@ processors:
         action: upsert
 
 exporters:
-  debug:
-#   verbosity: detailed
   otlp_grpc/jaeger:
     endpoint: "http://jaeger:4317"
     tls:
@@ -45,8 +43,4 @@ service:
     traces:
       receivers: [otlp]
       processors: [memory_limiter, resource]
-      exporters: [debug, otlp_grpc/jaeger]
-    metrics:
-      receivers: [otlp]
-      processors: [memory_limiter, resource]
-      exporters: [debug]
+      exporters: [otlp_grpc/jaeger]

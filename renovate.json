@@ -63,6 +63,16 @@
       "groupName": "Java dependencies"
     },
     {
+      "description": "Group OTel Java agent updates with Java dependencies",
+      "matchDatasources": [
+        "github-releases"
+      ],
+      "matchPackageNames": [
+        "open-telemetry/opentelemetry-java-instrumentation"
+      ],
+      "groupName": "Java dependencies"
+    },
+    {
       "groupName": "OpenTelemetry Collector Builder",
       "matchPackageNames": [
         "/^go\\.opentelemetry\\.io/collector//",
@@ -110,6 +120,18 @@
       "packageNameTemplate": "open-telemetry/opentelemetry-collector-releases",
       "datasourceTemplate": "github-releases",
       "extractVersionTemplate": "^cmd/builder/v(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
+      "description": "Update OpenTelemetry Java agent version in Dockerfile",
+      "managerFilePatterns": [
+        "src/auto-instrumentation/spring-auto/Dockerfile"
+      ],
+      "matchStrings": [
+        "ARG OTEL_AGENT_VERSION=(?<currentValue>.*?)\\n"
+      ],
+      "depNameTemplate": "open-telemetry/opentelemetry-java-instrumentation",
+      "datasourceTemplate": "github-releases"
     }
   ],
   "dependencyDashboard": true,

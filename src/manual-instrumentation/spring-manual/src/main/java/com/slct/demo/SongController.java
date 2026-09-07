@@ -58,6 +58,11 @@ public class SongController {
         this.propagator = propagator;
     }
 
+    @GetMapping("/health")
+    public ResponseEntity<Void> health() {
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping("/songs/{title}/{artist}")
     public String getSongs(@PathVariable String title, @PathVariable String artist) {
         // HTTP_RESPONSE_STATUS_CODE is set per outcome below, not at span start.
