@@ -33,4 +33,4 @@ USER app
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "application.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]

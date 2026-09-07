@@ -243,7 +243,8 @@ jobs:
       - name: Build OpenTelemetry Collector
         if: steps.set-outputs.outputs.cache-hit != 'true'
         run: |
-          docker buildx bake -f compose.yaml --set *.cache-from=type=gha --set *.cache-to=type=gha,mode=max otel-collector
+          # --load imports the image into the local daemon so compose can find it
+          docker buildx bake -f compose.yaml --set *.cache-from=type=gha --set *.cache-to=type=gha,mode=max --load otel-collector
           # Get the built image name using docker compose
           IMAGE_NAME=$(docker compose images -q otel-collector)
           if [ -z "$IMAGE_NAME" ]; then
