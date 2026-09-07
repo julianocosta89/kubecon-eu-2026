@@ -39,6 +39,8 @@ pool.on('error', (err) => {
   process.exit(-1)
 })
 
+app.get('/health', (req, res) => res.status(200).send('ok'))
+
 app.get('/songs/:title/:artist', async (req, res) => {
   const title = req.params.title
   const artist = req.params.artist
@@ -216,12 +218,29 @@ async function persistSong(title, artist, songData) {
   await pool.query(query, [title, artist, songData.album, songData.year, songData.duration_ms, songData.genre])
 }
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
   logger.info({ port }, 'Music service listening')
 })
 
 // Graceful shutdown
-process.on('SIGINT', () => {
-  pool.end()
-  process.exit(0)
-})
+const shutdown = (signal) => {
+  logger.info({ signal }, 'Graceful shutdown initiated')
+  server.close(async () => {
+    try {
+      await pool.end()
+      logger.info('Shutdown complete')
+      process.exit(0)
+    } catch (err) {
+      logger.error({ err }, 'Error during shutdown')
+      process.exit(1)
+    }
+  })
+  // Safety net: force exit if connections linger
+  setTimeout(() => {
+    logger.warn('Forcing shutdown after drain timeout')
+    process.exit(0)
+  }, 15000).unref()
+}
+
+process.on('SIGTERM', () => shutdown('SIGTERM'))
+process.on('SIGINT', () => shutdown('SIGINT'))

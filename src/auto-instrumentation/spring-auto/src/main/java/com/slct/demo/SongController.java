@@ -28,6 +28,11 @@ public class SongController {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private static final Logger logger = LoggerFactory.getLogger(SongController.class);
 
+    @GetMapping("/health")
+    public ResponseEntity<Void> health() {
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping("/songs/{title}/{artist}")
     public String getSongs(@PathVariable String title, @PathVariable String artist) {        
         Song song = songService.getSongFromDatabase(title, artist);
