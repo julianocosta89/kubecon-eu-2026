@@ -286,6 +286,7 @@ services:
 
   otel-collector:
     container_name: otel-collector
+    image: kubecon-eu-2026-otel-collector:latest
     build:
       context: ./src/otel-collector
     command:
