@@ -59,7 +59,7 @@ jobs:
       otel-collector: ${{ steps.changes.outputs.otel-collector }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
         with:
           fetch-depth: 0
 
@@ -93,7 +93,7 @@ jobs:
     if: (github.event_name == 'workflow_dispatch' && inputs.spring-auto == 'true') || (github.event_name == 'pull_request' && needs.detect-changes.outputs.spring-auto == 'true')
     steps:
       - name: Checkout code
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e  # v4
@@ -111,7 +111,7 @@ jobs:
     if: (github.event_name == 'workflow_dispatch' && inputs.spring-manual == 'true') || (github.event_name == 'pull_request' && needs.detect-changes.outputs.spring-manual == 'true')
     steps:
       - name: Checkout code
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e  # v4
@@ -129,7 +129,7 @@ jobs:
     if: (github.event_name == 'workflow_dispatch' && inputs.spring-uninstrumented == 'true') || (github.event_name == 'pull_request' && needs.detect-changes.outputs.spring-uninstrumented == 'true')
     steps:
       - name: Checkout code
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e  # v4
@@ -147,7 +147,7 @@ jobs:
     if: (github.event_name == 'workflow_dispatch' && inputs.express-auto == 'true') || (github.event_name == 'pull_request' && needs.detect-changes.outputs.express-auto == 'true')
     steps:
       - name: Checkout code
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e  # v4
@@ -165,7 +165,7 @@ jobs:
     if: (github.event_name == 'workflow_dispatch' && inputs.express-manual == 'true') || (github.event_name == 'pull_request' && needs.detect-changes.outputs.express-manual == 'true')
     steps:
       - name: Checkout code
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e  # v4
@@ -183,7 +183,7 @@ jobs:
     if: (github.event_name == 'workflow_dispatch' && inputs.express-uninstrumented == 'true') || (github.event_name == 'pull_request' && needs.detect-changes.outputs.express-uninstrumented == 'true')
     steps:
       - name: Checkout code
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e  # v4
@@ -208,7 +208,7 @@ jobs:
       cache-hit: ${{ steps.set-outputs.outputs.cache-hit }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e  # v4
@@ -282,7 +282,7 @@ jobs:
       cache-hit: ${{ steps.set-outputs.outputs.cache-hit }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
 
       - name: Generate cache key from Jaeger version
         id: cache-key
@@ -344,7 +344,7 @@ jobs:
     if: (github.event_name == 'workflow_dispatch' && inputs.otel-collector == 'true') || (github.event_name == 'pull_request' && needs.detect-changes.outputs.otel-collector == 'true')
     steps:
       - name: Checkout code
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e  # v4
@@ -370,7 +370,7 @@ jobs:
     if: (github.event_name == 'workflow_dispatch' && inputs.spring-auto == 'true') || (github.event_name == 'pull_request' && needs.detect-changes.outputs.spring-auto == 'true' && needs.test-spring-auto-service.result == 'success')
     steps:
       - name: Checkout code
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e  # v4
@@ -441,7 +441,7 @@ jobs:
     if: (github.event_name == 'workflow_dispatch' && inputs.spring-manual == 'true') || (github.event_name == 'pull_request' && needs.detect-changes.outputs.spring-manual == 'true' && needs.test-spring-manual-service.result == 'success')
     steps:
       - name: Checkout code
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e  # v4
@@ -512,7 +512,7 @@ jobs:
     if: (github.event_name == 'workflow_dispatch' && inputs.express-auto == 'true') || (github.event_name == 'pull_request' && needs.detect-changes.outputs.express-auto == 'true' && needs.test-express-auto-service.result == 'success')
     steps:
       - name: Checkout code
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e  # v4
@@ -583,7 +583,7 @@ jobs:
     if: (github.event_name == 'workflow_dispatch' && inputs.express-manual == 'true') || (github.event_name == 'pull_request' && needs.detect-changes.outputs.express-manual == 'true' && needs.test-express-manual-service.result == 'success')
     steps:
       - name: Checkout code
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e  # v4
@@ -657,7 +657,7 @@ jobs:
     if: (github.event_name == 'workflow_dispatch' && inputs.spring-uninstrumented == 'true') || (github.event_name == 'pull_request' && needs.detect-changes.outputs.spring-uninstrumented == 'true' && needs.test-spring-uninstrumented-service.result == 'success')
     steps:
       - name: Checkout code
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e  # v4
@@ -685,7 +685,7 @@ jobs:
     if: (github.event_name == 'workflow_dispatch' && inputs.express-uninstrumented == 'true') || (github.event_name == 'pull_request' && needs.detect-changes.outputs.express-uninstrumented == 'true' && needs.test-express-uninstrumented-service.result == 'success')
     steps:
       - name: Checkout code
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e  # v4
