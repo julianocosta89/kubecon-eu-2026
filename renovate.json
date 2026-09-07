@@ -26,7 +26,8 @@
         "openjdk",
         "golang",
         "alpine",
-        "postgres"
+        "postgres",
+        "otel/weaver"
       ],
       "groupName": "Docker base images"
     },
@@ -120,6 +121,18 @@
       "packageNameTemplate": "open-telemetry/opentelemetry-collector-releases",
       "datasourceTemplate": "github-releases",
       "extractVersionTemplate": "^cmd/builder/v(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
+      "description": "Update OpenTelemetry Weaver image tag in generate.sh",
+      "managerFilePatterns": [
+        "src/weaver/generate.sh"
+      ],
+      "matchStrings": [
+        "WEAVER_IMAGE=\"otel/weaver:(?<currentValue>.*?)\""
+      ],
+      "depNameTemplate": "otel/weaver",
+      "datasourceTemplate": "docker"
     },
     {
       "customType": "regex",
