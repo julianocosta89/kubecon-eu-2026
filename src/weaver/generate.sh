@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-WEAVER_IMAGE="otel/weaver:v0.26.1"
+WEAVER_IMAGE="otel/weaver:v0.27.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REGISTRY_DIR="$SCRIPT_DIR/model"
 TEMPLATES_DIR="$SCRIPT_DIR/templates"
