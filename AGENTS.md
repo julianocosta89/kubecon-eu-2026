@@ -57,7 +57,7 @@ Shared services: songs-db (5432), otel-collector (4317/4318), jaeger (16686)
 **Shared infrastructure:**
 - **otel-collector**: Custom OpenTelemetry Collector built with OCB, supports Jaeger and Datadog backends
 - **songs-db**: PostgreSQL 18.6-alpine3.23 database
-- **jaeger**: Jaeger 2.20.0 for trace visualization (UI on port 16686)
+- **jaeger**: Jaeger 2.22.0 for trace visualization (UI on port 16686)
 
 ### Data Flow
 
@@ -240,7 +240,7 @@ Triggers on PRs to main branch. Uses path filtering to only test changed service
 - `src/otel-collector/**` -> Builds and caches otel-collector
 
 **Integration Tests**:
-- Instrumented services: Starts with Docker Compose, sends test request, verifies traces in Jaeger
+- Instrumented services: Starts with Docker Compose, sends test request, verifies traces in Jaeger with [check-jaeger-traces.sh](.github/scripts/check-jaeger-traces.sh). The script polls Jaeger's `/api/v3/traces` query API for up to 60 seconds, because Jaeger 2.22 removed the legacy `/api/traces` endpoint. On failure it prints the last response and the Docker Compose logs.
 - Uninstrumented services: Starts with Docker Compose, validates HTTP response only
 
 **OTel Collector Caching**:

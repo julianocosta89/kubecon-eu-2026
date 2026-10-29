@@ -417,16 +417,7 @@ jobs:
           docker compose ps
           echo "Sending test request..."
           curl -f http://localhost:8080/songs/Polly/Nirvana || exit 1
-          sleep 10
-          echo "Checking for traces in Jaeger..."
-          TRACES=$(curl -s "http://localhost:16686/api/traces?service=songs-spring-auto&limit=1" | jq '.data | length')
-          if [ "$TRACES" -gt 0 ]; then
-            echo "Traces found in Jaeger!"
-          else
-            echo "No traces found in Jaeger"
-            docker compose logs
-            exit 1
-          fi
+          .github/scripts/check-jaeger-traces.sh songs-spring-auto
         env:
           OBSERVABILITY_BACKEND: jaeger
 
@@ -488,16 +479,7 @@ jobs:
           docker compose ps
           echo "Sending test request..."
           curl -f http://localhost:8081/songs/Polly/Nirvana || exit 1
-          sleep 10
-          echo "Checking for traces in Jaeger..."
-          TRACES=$(curl -s "http://localhost:16686/api/traces?service=songs-spring-manual&limit=1" | jq '.data | length')
-          if [ "$TRACES" -gt 0 ]; then
-            echo "Traces found in Jaeger!"
-          else
-            echo "No traces found in Jaeger"
-            docker compose logs
-            exit 1
-          fi
+          .github/scripts/check-jaeger-traces.sh songs-spring-manual
         env:
           OBSERVABILITY_BACKEND: jaeger
 
@@ -559,16 +541,7 @@ jobs:
           docker compose ps
           echo "Sending test request..."
           curl -f http://localhost:3000/songs/Polly/Nirvana || exit 1
-          sleep 10
-          echo "Checking for traces in Jaeger..."
-          TRACES=$(curl -s "http://localhost:16686/api/traces?service=songs-express-auto&limit=1" | jq '.data | length')
-          if [ "$TRACES" -gt 0 ]; then
-            echo "Traces found in Jaeger!"
-          else
-            echo "No traces found in Jaeger"
-            docker compose logs
-            exit 1
-          fi
+          .github/scripts/check-jaeger-traces.sh songs-express-auto
         env:
           OBSERVABILITY_BACKEND: jaeger
 
@@ -630,16 +603,7 @@ jobs:
           docker compose ps
           echo "Sending test request..."
           curl -f http://localhost:3001/songs/Polly/Nirvana || exit 1
-          sleep 10
-          echo "Checking for traces in Jaeger..."
-          TRACES=$(curl -s "http://localhost:16686/api/traces?service=songs-express-manual&limit=1" | jq '.data | length')
-          if [ "$TRACES" -gt 0 ]; then
-            echo "Traces found in Jaeger!"
-          else
-            echo "No traces found in Jaeger"
-            docker compose logs
-            exit 1
-          fi
+          .github/scripts/check-jaeger-traces.sh songs-express-manual
         env:
           OBSERVABILITY_BACKEND: jaeger
 
