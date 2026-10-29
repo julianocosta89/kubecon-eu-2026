@@ -417,16 +417,26 @@ jobs:
           docker compose ps
           echo "Sending test request..."
           curl -f http://localhost:8080/songs/Polly/Nirvana || exit 1
-          sleep 10
           echo "Checking for traces in Jaeger..."
-          TRACES=$(curl -s "http://localhost:16686/api/traces?service=songs-spring-auto&limit=1" | jq '.data | length')
-          if [ "$TRACES" -gt 0 ]; then
-            echo "Traces found in Jaeger!"
-          else
-            echo "No traces found in Jaeger"
-            docker compose logs
-            exit 1
-          fi
+          URL="http://localhost:16686/api/traces?service=songs-spring-auto&limit=1"
+          for i in $(seq 1 12); do
+            RESPONSE=$(curl -s -w '\n%{http_code}' "$URL" || true)
+            CODE=$(echo "$RESPONSE" | tail -n1)
+            BODY=$(echo "$RESPONSE" | sed '$d')
+            TRACES=$(echo "$BODY" | jq '.data | length' 2>/dev/null || echo 0)
+            if [ "$CODE" = "200" ] && [ "${TRACES:-0}" -gt 0 ]; then
+              echo "Traces found in Jaeger!"
+              exit 0
+            fi
+            echo "Attempt $i: HTTP $CODE, traces=${TRACES:-0}. Retrying in 5s..."
+            sleep 5
+          done
+          echo "No traces found in Jaeger. Last response (HTTP $CODE):"
+          echo "$BODY" | head -c 1000
+          echo
+          docker compose ps -a
+          docker compose logs
+          exit 1
         env:
           OBSERVABILITY_BACKEND: jaeger
 
@@ -488,16 +498,26 @@ jobs:
           docker compose ps
           echo "Sending test request..."
           curl -f http://localhost:8081/songs/Polly/Nirvana || exit 1
-          sleep 10
           echo "Checking for traces in Jaeger..."
-          TRACES=$(curl -s "http://localhost:16686/api/traces?service=songs-spring-manual&limit=1" | jq '.data | length')
-          if [ "$TRACES" -gt 0 ]; then
-            echo "Traces found in Jaeger!"
-          else
-            echo "No traces found in Jaeger"
-            docker compose logs
-            exit 1
-          fi
+          URL="http://localhost:16686/api/traces?service=songs-spring-manual&limit=1"
+          for i in $(seq 1 12); do
+            RESPONSE=$(curl -s -w '\n%{http_code}' "$URL" || true)
+            CODE=$(echo "$RESPONSE" | tail -n1)
+            BODY=$(echo "$RESPONSE" | sed '$d')
+            TRACES=$(echo "$BODY" | jq '.data | length' 2>/dev/null || echo 0)
+            if [ "$CODE" = "200" ] && [ "${TRACES:-0}" -gt 0 ]; then
+              echo "Traces found in Jaeger!"
+              exit 0
+            fi
+            echo "Attempt $i: HTTP $CODE, traces=${TRACES:-0}. Retrying in 5s..."
+            sleep 5
+          done
+          echo "No traces found in Jaeger. Last response (HTTP $CODE):"
+          echo "$BODY" | head -c 1000
+          echo
+          docker compose ps -a
+          docker compose logs
+          exit 1
         env:
           OBSERVABILITY_BACKEND: jaeger
 
@@ -559,16 +579,26 @@ jobs:
           docker compose ps
           echo "Sending test request..."
           curl -f http://localhost:3000/songs/Polly/Nirvana || exit 1
-          sleep 10
           echo "Checking for traces in Jaeger..."
-          TRACES=$(curl -s "http://localhost:16686/api/traces?service=songs-express-auto&limit=1" | jq '.data | length')
-          if [ "$TRACES" -gt 0 ]; then
-            echo "Traces found in Jaeger!"
-          else
-            echo "No traces found in Jaeger"
-            docker compose logs
-            exit 1
-          fi
+          URL="http://localhost:16686/api/traces?service=songs-express-auto&limit=1"
+          for i in $(seq 1 12); do
+            RESPONSE=$(curl -s -w '\n%{http_code}' "$URL" || true)
+            CODE=$(echo "$RESPONSE" | tail -n1)
+            BODY=$(echo "$RESPONSE" | sed '$d')
+            TRACES=$(echo "$BODY" | jq '.data | length' 2>/dev/null || echo 0)
+            if [ "$CODE" = "200" ] && [ "${TRACES:-0}" -gt 0 ]; then
+              echo "Traces found in Jaeger!"
+              exit 0
+            fi
+            echo "Attempt $i: HTTP $CODE, traces=${TRACES:-0}. Retrying in 5s..."
+            sleep 5
+          done
+          echo "No traces found in Jaeger. Last response (HTTP $CODE):"
+          echo "$BODY" | head -c 1000
+          echo
+          docker compose ps -a
+          docker compose logs
+          exit 1
         env:
           OBSERVABILITY_BACKEND: jaeger
 
@@ -630,16 +660,26 @@ jobs:
           docker compose ps
           echo "Sending test request..."
           curl -f http://localhost:3001/songs/Polly/Nirvana || exit 1
-          sleep 10
           echo "Checking for traces in Jaeger..."
-          TRACES=$(curl -s "http://localhost:16686/api/traces?service=songs-express-manual&limit=1" | jq '.data | length')
-          if [ "$TRACES" -gt 0 ]; then
-            echo "Traces found in Jaeger!"
-          else
-            echo "No traces found in Jaeger"
-            docker compose logs
-            exit 1
-          fi
+          URL="http://localhost:16686/api/traces?service=songs-express-manual&limit=1"
+          for i in $(seq 1 12); do
+            RESPONSE=$(curl -s -w '\n%{http_code}' "$URL" || true)
+            CODE=$(echo "$RESPONSE" | tail -n1)
+            BODY=$(echo "$RESPONSE" | sed '$d')
+            TRACES=$(echo "$BODY" | jq '.data | length' 2>/dev/null || echo 0)
+            if [ "$CODE" = "200" ] && [ "${TRACES:-0}" -gt 0 ]; then
+              echo "Traces found in Jaeger!"
+              exit 0
+            fi
+            echo "Attempt $i: HTTP $CODE, traces=${TRACES:-0}. Retrying in 5s..."
+            sleep 5
+          done
+          echo "No traces found in Jaeger. Last response (HTTP $CODE):"
+          echo "$BODY" | head -c 1000
+          echo
+          docker compose ps -a
+          docker compose logs
+          exit 1
         env:
           OBSERVABILITY_BACKEND: jaeger
 
