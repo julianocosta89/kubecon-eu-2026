@@ -418,12 +418,15 @@ jobs:
           echo "Sending test request..."
           curl -f http://localhost:8080/songs/Polly/Nirvana || exit 1
           echo "Checking for traces in Jaeger..."
-          URL="http://localhost:16686/api/traces?service=songs-spring-auto&limit=1"
+          # Jaeger 2.22 removed the legacy /api/traces endpoint; use the v3 query API.
+          START=$(date -u -d '-15 minutes' +%Y-%m-%dT%H:%M:%SZ)
+          END=$(date -u -d '+15 minutes' +%Y-%m-%dT%H:%M:%SZ)
+          URL="http://localhost:16686/api/v3/traces?query.service_name=songs-spring-auto&query.start_time_min=$START&query.start_time_max=$END&query.search_depth=1"
           for i in $(seq 1 12); do
             RESPONSE=$(curl -s -w '\n%{http_code}' "$URL" || true)
             CODE=$(echo "$RESPONSE" | tail -n1)
             BODY=$(echo "$RESPONSE" | sed '$d')
-            TRACES=$(echo "$BODY" | jq '.data | length' 2>/dev/null || echo 0)
+            TRACES=$(echo "$BODY" | jq '.result.resourceSpans // [] | length' 2>/dev/null || echo 0)
             if [ "$CODE" = "200" ] && [ "${TRACES:-0}" -gt 0 ]; then
               echo "Traces found in Jaeger!"
               exit 0
@@ -499,12 +502,15 @@ jobs:
           echo "Sending test request..."
           curl -f http://localhost:8081/songs/Polly/Nirvana || exit 1
           echo "Checking for traces in Jaeger..."
-          URL="http://localhost:16686/api/traces?service=songs-spring-manual&limit=1"
+          # Jaeger 2.22 removed the legacy /api/traces endpoint; use the v3 query API.
+          START=$(date -u -d '-15 minutes' +%Y-%m-%dT%H:%M:%SZ)
+          END=$(date -u -d '+15 minutes' +%Y-%m-%dT%H:%M:%SZ)
+          URL="http://localhost:16686/api/v3/traces?query.service_name=songs-spring-manual&query.start_time_min=$START&query.start_time_max=$END&query.search_depth=1"
           for i in $(seq 1 12); do
             RESPONSE=$(curl -s -w '\n%{http_code}' "$URL" || true)
             CODE=$(echo "$RESPONSE" | tail -n1)
             BODY=$(echo "$RESPONSE" | sed '$d')
-            TRACES=$(echo "$BODY" | jq '.data | length' 2>/dev/null || echo 0)
+            TRACES=$(echo "$BODY" | jq '.result.resourceSpans // [] | length' 2>/dev/null || echo 0)
             if [ "$CODE" = "200" ] && [ "${TRACES:-0}" -gt 0 ]; then
               echo "Traces found in Jaeger!"
               exit 0
@@ -580,12 +586,15 @@ jobs:
           echo "Sending test request..."
           curl -f http://localhost:3000/songs/Polly/Nirvana || exit 1
           echo "Checking for traces in Jaeger..."
-          URL="http://localhost:16686/api/traces?service=songs-express-auto&limit=1"
+          # Jaeger 2.22 removed the legacy /api/traces endpoint; use the v3 query API.
+          START=$(date -u -d '-15 minutes' +%Y-%m-%dT%H:%M:%SZ)
+          END=$(date -u -d '+15 minutes' +%Y-%m-%dT%H:%M:%SZ)
+          URL="http://localhost:16686/api/v3/traces?query.service_name=songs-express-auto&query.start_time_min=$START&query.start_time_max=$END&query.search_depth=1"
           for i in $(seq 1 12); do
             RESPONSE=$(curl -s -w '\n%{http_code}' "$URL" || true)
             CODE=$(echo "$RESPONSE" | tail -n1)
             BODY=$(echo "$RESPONSE" | sed '$d')
-            TRACES=$(echo "$BODY" | jq '.data | length' 2>/dev/null || echo 0)
+            TRACES=$(echo "$BODY" | jq '.result.resourceSpans // [] | length' 2>/dev/null || echo 0)
             if [ "$CODE" = "200" ] && [ "${TRACES:-0}" -gt 0 ]; then
               echo "Traces found in Jaeger!"
               exit 0
@@ -661,12 +670,15 @@ jobs:
           echo "Sending test request..."
           curl -f http://localhost:3001/songs/Polly/Nirvana || exit 1
           echo "Checking for traces in Jaeger..."
-          URL="http://localhost:16686/api/traces?service=songs-express-manual&limit=1"
+          # Jaeger 2.22 removed the legacy /api/traces endpoint; use the v3 query API.
+          START=$(date -u -d '-15 minutes' +%Y-%m-%dT%H:%M:%SZ)
+          END=$(date -u -d '+15 minutes' +%Y-%m-%dT%H:%M:%SZ)
+          URL="http://localhost:16686/api/v3/traces?query.service_name=songs-express-manual&query.start_time_min=$START&query.start_time_max=$END&query.search_depth=1"
           for i in $(seq 1 12); do
             RESPONSE=$(curl -s -w '\n%{http_code}' "$URL" || true)
             CODE=$(echo "$RESPONSE" | tail -n1)
             BODY=$(echo "$RESPONSE" | sed '$d')
-            TRACES=$(echo "$BODY" | jq '.data | length' 2>/dev/null || echo 0)
+            TRACES=$(echo "$BODY" | jq '.result.resourceSpans // [] | length' 2>/dev/null || echo 0)
             if [ "$CODE" = "200" ] && [ "${TRACES:-0}" -gt 0 ]; then
               echo "Traces found in Jaeger!"
               exit 0
