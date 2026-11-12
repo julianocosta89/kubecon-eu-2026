@@ -43,12 +43,12 @@ cp .env.example .env   # if it exists, otherwise edit .env directly
 OBSERVABILITY_BACKEND=jaeger
 ```
 
-**Jaeger + Datadog** (requires a Datadog account):
+**Dash0** (requires a Dash0 account):
 
 ```
-OBSERVABILITY_BACKEND=datadog
-DD_SITE_PARAMETER=datadoghq.com   # or datadoghq.eu
-DD_API_KEY=your_api_key_here
+OBSERVABILITY_BACKEND=dash0
+DASH0_ENDPOINT=ingress.eu-west-1.aws.dash0.com:4317   # your region's OTLP gRPC endpoint, without scheme
+DASH0_AUTHORIZATION_TOKEN=your_auth_token_here
 ```
 
 > **Warning**: Never commit real credentials. The `.env` file is listed in `.gitignore`.
@@ -157,7 +157,7 @@ Requires Java 25 and the same shared services listed above.
 
 ## Benchmarking
 
-The `benchmarks/` directory contains a k6 load-testing suite that measures instrumentation overhead. It benchmarks all 6 services sequentially at 400 rps, comparing CPU and memory via Datadog container metrics.
+The `benchmarks/` directory contains a k6 load-testing suite that measures instrumentation overhead. It benchmarks all 6 services sequentially at 400 rps, comparing CPU and memory via container metrics in Dash0.
 
 See **[benchmarks/README.md](benchmarks/README.md)** for full setup and usage instructions.
 
@@ -201,7 +201,7 @@ cd benchmarks
 | Service | Port | Purpose |
 |---|---|---|
 | `songs-db` | 5432 | PostgreSQL — song metadata cache |
-| `otel-collector` | 4317 (gRPC) / 4318 (HTTP) | Receives OTLP, exports to Jaeger/Datadog |
+| `otel-collector` | 4317 (gRPC) / 4318 (HTTP) | Receives OTLP, exports to Jaeger or Dash0 |
 | `jaeger` | 16686 (UI) | Trace visualization |
 
 ---

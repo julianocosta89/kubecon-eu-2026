@@ -55,7 +55,7 @@ Shared services: songs-db (5432), otel-collector (4317/4318), jaeger (16686)
 - **songs-express-uninstrumented**: Express 5.2 (Node.js, port 3002) with no OpenTelemetry dependencies
 
 **Shared infrastructure:**
-- **otel-collector**: Custom OpenTelemetry Collector built with OCB, supports Jaeger and Datadog backends
+- **otel-collector**: Custom OpenTelemetry Collector built with OCB, supports Jaeger and Dash0 backends
 - **songs-db**: PostgreSQL 18.6-alpine3.23 database
 - **jaeger**: Jaeger 2.22.0 for trace visualization (UI on port 16686)
 
@@ -66,7 +66,7 @@ Shared services: songs-db (5432), otel-collector (4317/4318), jaeger (16686)
 3. If not found, queries MusicBrainz API (`https://musicbrainz.org/ws/2/recording/`)
 4. Response is persisted to database for future requests
 5. Telemetry data (instrumented services only) sent to OTel Collector via OTLP HTTP (port 4318)
-6. Collector processes and exports to Jaeger or Datadog
+6. Collector processes and exports to Jaeger or Dash0
 
 ## Development Commands
 
@@ -143,11 +143,11 @@ docker compose --profile auto --profile manual --profile uninstrumented down -v
 The [.env](.env) file controls the observability backend:
 
 - `OBSERVABILITY_BACKEND=jaeger` (default): Send telemetry only to Jaeger
-- `OBSERVABILITY_BACKEND=datadog`: Send telemetry to both Datadog and Jaeger (requires credentials)
+- `OBSERVABILITY_BACKEND=dash0`: Send traces, metrics, and logs to Dash0 only (requires credentials)
 
-**Datadog Configuration** (if using):
-- Set `DD_SITE_PARAMETER` (e.g., `datadoghq.com`)
-- Set `DD_API_KEY` with your Datadog API key
+**Dash0 Configuration** (if using):
+- Set `DASH0_ENDPOINT` to your region's OTLP gRPC endpoint, without scheme (e.g., `ingress.eu-west-1.aws.dash0.com:4317`)
+- Set `DASH0_AUTHORIZATION_TOKEN` with a Dash0 auth token
 
 ## Instrumentation Approach Comparison
 
@@ -215,14 +215,18 @@ cd src/otel-collector
 
 The collector configuration is selected at runtime via `OBSERVABILITY_BACKEND`:
 - `jaeger` -> Uses [otel-collector-config-jaeger.yaml](src/otel-collector/otel-collector-config-jaeger.yaml)
-- `datadog` -> Uses [otel-collector-config-datadog.yaml](src/otel-collector/otel-collector-config-datadog.yaml)
+- `dash0` -> Uses [otel-collector-config-dash0.yaml](src/otel-collector/otel-collector-config-dash0.yaml)
 
 ### Key Collector Features
 
-1. **OTTL Filtering**: Removes noisy `@opentelemetry/instrumentation-net` and `@opentelemetry/instrumentation-dns` spans
-2. **Resource Processing**: Adds `deployment.environment.name=dev` attribute
+1. **Resource Processing**: Upserts `deployment.environment.name` (`dev` for Jaeger, `kubecon-eu-2026` for Dash0)
+2. **Memory Limiting**: `memory_limiter` processor caps the collector at 1000 MiB
 3. **Health Checks**: Exposes `/health/status` endpoint on port 13133
-4. **Multiple Exporters**: Supports both Jaeger (OTLP) and Datadog exporters
+4. **Container and Host Metrics** (Dash0 only): `docker_stats` and `hostmetrics` receivers collect the container CPU/memory and host metrics used for benchmarking
+5. **Multiple Exporters**:
+   - Jaeger: traces only, via OTLP gRPC
+   - Dash0: traces, metrics, and logs via OTLP gRPC with bearer token auth; the `Dash0-Dataset` header defaults to `default` when `DASH0_DATASET` is unset
+6. **Collector Self-Telemetry** (Dash0 only): The collector's own metrics and logs are exported to Dash0
 
 ## CI/CD
 

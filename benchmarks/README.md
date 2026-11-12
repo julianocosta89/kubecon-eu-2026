@@ -43,23 +43,23 @@ All 6 service variants are benchmarked:
    docker compose version
    ```
 
-3. **Datadog Account** - Metrics collection backend
-   - Set up account at https://www.datadoghq.com/
-   - Obtain API key from `https://app.<DD_SITE_PARAMETER>/organization-settings/api-keys`
-     (e.g. `https://app.datadoghq.eu/organization-settings/api-keys`)
+3. **Dash0 Account** - Metrics collection backend
+   - Sign up at https://www.dash0.com/
+   - Create an auth token under **Settings → Auth Tokens**
+   - Find your region's OTLP gRPC endpoint under **Settings → Endpoints**
 
 ### Environment Configuration
 
-1. **Set Datadog credentials** in `.env` file (project root):
+1. **Set Dash0 credentials** in `.env` file (project root):
    ```bash
-   OBSERVABILITY_BACKEND=datadog
-   DD_SITE_PARAMETER=datadoghq.com  # or datadoghq.eu
-   DD_API_KEY=your_api_key_here
+   OBSERVABILITY_BACKEND=dash0
+   DASH0_ENDPOINT=ingress.eu-west-1.aws.dash0.com:4317  # your region's endpoint, without scheme
+   DASH0_AUTHORIZATION_TOKEN=your_auth_token_here
    ```
 
 2. **Verify configuration**:
    ```bash
-   cat ../.env | grep -E "(OBSERVABILITY_BACKEND|DD_SITE_PARAMETER|DD_API_KEY)"
+   cat ../.env | grep -E "(OBSERVABILITY_BACKEND|DASH0_ENDPOINT|DASH0_AUTHORIZATION_TOKEN)"
    ```
 
 ## Quick Start
@@ -176,7 +176,7 @@ results/20260217-143022/
 ├── k6-spring-uninstrumented-raw.json          # Full k6 data (all data points)
 ├── k6-spring-auto-raw.json
 ├── ...
-├── spring-uninstrumented-timerange.txt        # Datadog correlation timestamps
+├── spring-uninstrumented-timerange.txt        # Dash0 correlation timestamps
 └── ...
 ```
 
@@ -202,20 +202,18 @@ cat results/{timestamp}/k6-spring-auto-raw.json | jq 'select(.type == "Point" an
 - P95 latency increase manual vs uninstrumented: 2-8% (selective instrumentation)
 - Failure rate: <1% for all variants at 200 rps
 
-### Viewing Datadog Metrics
+### Viewing Metrics in Dash0
 
-The OTel Collector automatically exports container metrics to Datadog during the test.
+The OTel Collector exports container metrics (`docker_stats` receiver) and k6 metrics (k6 OpenTelemetry output) to Dash0 during the test.
 
-#### 1. Navigate to Metrics Explorer
+#### 1. Import the Dashboards
 
-The URL depends on your `DD_SITE_PARAMETER` from `.env`:
+[`dashboards/`](dashboards/) contains two Perses dashboards:
 
-```bash
-# Get your site
-grep DD_SITE_PARAMETER ../.env
-# DD_SITE_PARAMETER=datadoghq.eu  →  https://app.datadoghq.eu/metric/explorer
-# DD_SITE_PARAMETER=datadoghq.com →  https://app.datadoghq.com/metric/explorer
-```
+- **`kubecon-eu-2026.json`** - Container CPU and memory for all 6 variants, per language and side by side
+- **`k6-four-golden-signals.json`** - Latency, traffic, errors, and saturation from k6, filterable by service
+
+To import one: in Dash0, go to **Dashboards → + Add**, click **Edit as JSON**, upload the file, and click **Apply**.
 
 #### 2. Set Time Range
 
@@ -231,34 +229,33 @@ cat results/{timestamp}/spring-uninstrumented-timerange.txt
 # Port: 8082
 ```
 
-Set Datadog time picker to match the `Start` → `End` range.
+Set the Dash0 time picker to match the `Start` → `End` range.
 
 #### 3. Key Metrics to Visualize
 
 **CPU Usage**:
-- Metric: `container.cpu.usage.total`
-- Filter: `container_name:songs-spring-uninstrumented` or `container_name:songs-spring-auto`
-- Aggregation: `avg` or `max`
+- Metric: `container.cpu.usage.total` (cumulative nanoseconds; use `rate()` and divide by `1e9` for cores)
+- Filter: `container.name` = `songs-spring-uninstrumented` or `songs-spring-auto`
 
 **Memory Usage**:
 - Metric: `container.memory.usage.total`
-- Filter: `container_name:songs-spring-uninstrumented` or `container_name:songs-spring-auto`
-- Aggregation: `avg` or `max`
+- Filter: `container.name` = `songs-spring-uninstrumented` or `songs-spring-auto`
 
 **Host-level metrics** (if needed):
-- `system.cpu.usage`
-- `system.mem.used`
+- `system.cpu.utilization`
+- `system.memory.usage`
 
-#### 4. Create Comparison Dashboard
+#### 4. Compare Services in the Query Builder
 
-**Example query** for side-by-side comparison:
+**Example PromQL query** for side-by-side comparison:
 
+```promql
+avg by (container_name) (
+  rate({otel_metric_name="container.cpu.usage.total", container_name=~"songs-spring-(uninstrumented|auto)"}[1m])
+) / 1e9
 ```
-avg:container.cpu.usage.total{container_name:songs-spring-uninstrumented}
-avg:container.cpu.usage.total{container_name:songs-spring-auto}
-```
 
-This will show both services on the same graph.
+This will show both services on the same graph, in CPU cores.
 
 #### 5. Calculate Overhead Percentage
 
@@ -275,7 +272,7 @@ This will show both services on the same graph.
 **Successful benchmark**:
 - ✅ k6 tests complete without errors
 - ✅ Failure rate < 1% for both services
-- ✅ Datadog metrics show data for test time ranges
+- ✅ Dash0 metrics show data for test time ranges
 - ✅ Visually observable difference in CPU/memory between uninstrumented and auto
 - ✅ P95 latency differs measurably (expected: 5-15% increase for auto)
 
@@ -302,9 +299,9 @@ Service (Spring or Express × uninstrumented/auto/manual)
     ↓
 PostgreSQL (cached lookup — eliminates MusicBrainz variance)
     ↓
-OTLP telemetry → OTel Collector → Datadog
+OTLP telemetry → OTel Collector → Dash0
                      ↓
-                 docker_stats receiver → Container CPU/memory → Datadog
+                 docker_stats receiver → Container CPU/memory → Dash0
 ```
 
 **Key design decisions**:
@@ -336,7 +333,7 @@ docker compose logs songs-spring-uninstrumented --tail=50
 # - OTel Collector not healthy (check port 13133)
 ```
 
-### No metrics in Datadog
+### No metrics in Dash0
 
 ```bash
 # Verify OBSERVABILITY_BACKEND is set
@@ -345,8 +342,8 @@ cat ../.env | grep OBSERVABILITY_BACKEND
 # Check OTel Collector health
 curl http://localhost:13133/health/status
 
-# Check Datadog exporter logs
-docker compose logs otel-collector | grep datadog
+# Check Dash0 exporter logs
+docker compose logs otel-collector | grep -i dash0
 ```
 
 ### k6 threshold failures
@@ -386,7 +383,8 @@ When adding new k6 scenarios (e.g., cache-miss, ramp-up):
 
 - [k6 Documentation](https://k6.io/docs/)
 - [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/)
-- [Datadog Metrics Explorer](https://docs.datadoghq.com/metrics/explorer/)
+- [Dash0: Import Dashboards](https://dash0.com/docs/dash0/dashboards/import-dashboards)
+- [Dash0: OpenTelemetry Metric Names in PromQL](https://dash0.com/docs/dash0/telemetry/metrics/understand-otel-metric-names)
 
 ## License
 
