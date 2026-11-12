@@ -9,14 +9,14 @@ RUN ./gradlew bootJar --no-daemon
 
 
 # Extraction stage: split the Boot jar into cache-friendly layers
-FROM eclipse-temurin:25.0.4_7-jre-alpine-3.23 AS extract
+FROM eclipse-temurin:25.0.5_8-jre-alpine-3.23 AS extract
 WORKDIR /app
 COPY --from=build /app/build/libs/*.jar app.jar
 RUN java -Djarmode=tools -jar app.jar extract --layers --destination extracted
 
 
 # Runtime stage
-FROM eclipse-temurin:25.0.4_7-jre-alpine-3.23
+FROM eclipse-temurin:25.0.5_8-jre-alpine-3.23
 
 RUN addgroup --system app && adduser --system --ingroup app app
 WORKDIR /app
