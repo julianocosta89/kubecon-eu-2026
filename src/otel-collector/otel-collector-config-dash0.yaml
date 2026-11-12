@@ -10,13 +10,9 @@ extensions:
       status:
         enabled: true
         path: "/health/status"
-  datadog/extension:
-    api:
-      site: ${DD_SITE_PARAMETER}
-      key: ${DD_API_KEY}
-    http:
-      endpoint: "localhost:9875"
-      path: "/metadata"
+  bearertokenauth/dash0:
+    scheme: Bearer
+    token: ${env:DASH0_AUTHORIZATION_TOKEN}
 
 receivers:
   otlp:
@@ -106,23 +102,18 @@ processors:
   resource:
     attributes:
       - key: deployment.environment.name
-        value: "dev"
+        value: "kubecon-eu-2026"
         action: upsert
-
-connectors:
-  datadog/connector:
-    traces:
-      compute_stats_by_span_kind: true
 
 exporters:
   debug:
   # verbosity: detailed
-  datadog:
-    traces:
-      compute_stats_by_span_kind: true
-    api:
-      site: ${DD_SITE_PARAMETER}
-      key: ${DD_API_KEY}
+  otlp/dash0:
+    auth:
+      authenticator: bearertokenauth/dash0
+    endpoint: ${env:DASH0_ENDPOINT}
+    headers:
+      Dash0-Dataset: ${env:DASH0_DATASET:-default}
     sending_queue:
       batch:
         min_size: 10
@@ -130,32 +121,46 @@ exporters:
         flush_timeout: 10s
 
 service:
-  extensions: [healthcheckv2, datadog/extension]
+  extensions: [healthcheckv2, bearertokenauth/dash0]
   pipelines:
     traces:
       receivers: [otlp]
       processors: [memory_limiter, resource]
-      exporters: [debug, datadog/connector, datadog]
+      exporters: [debug, otlp/dash0]
     metrics:
-      receivers: [otlp, datadog/connector, docker_stats, hostmetrics]
+      receivers: [otlp, docker_stats, hostmetrics]
       processors: [memory_limiter, resource]
-      exporters: [debug, datadog]
+      exporters: [debug, otlp/dash0]
     logs:
       receivers: [otlp]
       processors: [memory_limiter, resource]
-      exporters: [datadog]
+      exporters: [otlp/dash0]
   telemetry:
+    resource:
+      deployment.environment.name: otelfeature
     metrics:
       level: detailed
       readers:
         - periodic:
+            interval: 15000
             exporter:
               otlp:
-                protocol: http/protobuf
-                endpoint: https://otlp.${DD_SITE_PARAMETER}/v1/metrics
-                temporality_preference: delta
+                protocol: grpc
+                endpoint: https://${env:DASH0_ENDPOINT}
                 headers:
-                  - name: dd-api-key
-                    value: ${DD_API_KEY}
-                  - name: dd-otel-metric-config
-                    value: '{"resource_attributes_as_tags": true}'
+                  - name: Authorization
+                    value: Bearer ${env:DASH0_AUTHORIZATION_TOKEN}
+                  - name: Dash0-Dataset
+                    value: ${env:DASH0_DATASET:-default}
+    logs:
+      processors:
+        - batch:
+            exporter:
+              otlp:
+                protocol: grpc
+                endpoint: https://${env:DASH0_ENDPOINT}
+                headers:
+                  - name: Authorization
+                    value: Bearer ${env:DASH0_AUTHORIZATION_TOKEN}
+                  - name: Dash0-Dataset
+                    value: ${env:DASH0_DATASET:-default}

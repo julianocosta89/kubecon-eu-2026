@@ -295,6 +295,8 @@ services:
       - ./src/otel-collector/otel-collector-config${OBSERVABILITY_BACKEND:+}-${OBSERVABILITY_BACKEND}.yaml:/etc/otel-collector-config.yaml
       - /:/hostfs:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    security_opt:
+      - "label=${OTEL_COLLECTOR_SELINUX_LABEL:-type:container_t}"
     ports:
       - 4317:4317 # OTLP gRPC
       - 4318:4318 # OTLP HTTP
@@ -304,8 +306,8 @@ services:
       - OTEL_COLLECTOR_HOST=otel-collector
       - OTEL_COLLECTOR_PORT_GRPC=4317
       - OTEL_COLLECTOR_PORT_HTTP=4318
-      - DD_SITE_PARAMETER
-      - DD_API_KEY
+      - DASH0_ENDPOINT
+      - DASH0_AUTHORIZATION_TOKEN
     deploy:
       resources:
         limits:
