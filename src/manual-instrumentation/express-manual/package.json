@@ -1,9 +1,9 @@
 {
   "dependencies": {
     "@opentelemetry/api": "1.10.0",
-    "@opentelemetry/exporter-trace-otlp-http": "0.301.1",
+    "@opentelemetry/exporter-trace-otlp-http": "0.301.2",
     "@opentelemetry/resources": "3.1.1",
-    "@opentelemetry/sdk-node": "0.301.1",
+    "@opentelemetry/sdk-node": "0.301.2",
     "@opentelemetry/semantic-conventions": "1.45.0",
     "express": "5.3.0",
     "helmet": "8.3.0",
