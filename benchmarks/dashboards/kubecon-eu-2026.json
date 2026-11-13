@@ -1,0 +1,889 @@
+{
+  "apiVersion": "perses.dev/v1alpha1",
+  "kind": "PersesDashboard",
+  "metadata": {
+    "name": "kubecon-eu-2026"
+  },
+  "spec": {
+    "display": {
+      "name": "KubeCon EU - 2026",
+      "description": "Container CPU and memory for the 6 song service variants, from the OTel Collector docker_stats receiver."
+    },
+    "duration": "1h",
+    "variables": [],
+    "panels": {
+      "spring_cpu": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Container CPU usage",
+            "description": "CPU cores used (rate of container.cpu.usage.total, ns/s ÷ 1e9)"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "position": "bottom",
+                "mode": "table",
+                "values": [
+                  "mean",
+                  "max",
+                  "last"
+                ]
+              },
+              "visual": {
+                "display": "line",
+                "lineWidth": 1.5,
+                "palette": {
+                  "mode": "auto"
+                }
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "decimal"
+                },
+                "min": 0
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "avg by (container_name) (rate({otel_metric_name=\"container.cpu.usage.total\", container_name=~\"songs-spring-.*\"}[$__interval]) / 1e9)",
+                    "seriesNameFormat": "{{container_name}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "spring_mem": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Container memory usage"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "position": "bottom",
+                "mode": "table",
+                "values": [
+                  "mean",
+                  "max",
+                  "last"
+                ]
+              },
+              "visual": {
+                "display": "line",
+                "lineWidth": 1.5,
+                "palette": {
+                  "mode": "auto"
+                }
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "bytes"
+                },
+                "min": 0
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "avg by (container_name) ({otel_metric_name=\"container.memory.usage.total\", container_name=~\"songs-spring-.*\"})",
+                    "seriesNameFormat": "{{container_name}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "spring_cpu_uninstrumented": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "CPU usage (avg) — uninstrumented"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "mean",
+              "format": {
+                "unit": "decimal"
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "avg(rate({otel_metric_name=\"container.cpu.usage.total\", container_name=~\"songs-spring-uninstrumented\"}[$__interval]) / 1e9)",
+                    "seriesNameFormat": ""
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "spring_mem_uninstrumented": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Memory usage (avg) — uninstrumented"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "mean",
+              "format": {
+                "unit": "bytes"
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "avg({otel_metric_name=\"container.memory.usage.total\", container_name=~\"songs-spring-uninstrumented\"})",
+                    "seriesNameFormat": ""
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "spring_cpu_manual": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "CPU usage (avg) — manual"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "mean",
+              "format": {
+                "unit": "decimal"
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "avg(rate({otel_metric_name=\"container.cpu.usage.total\", container_name=~\"songs-spring-manual\"}[$__interval]) / 1e9)",
+                    "seriesNameFormat": ""
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "spring_mem_manual": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Memory usage (avg) — manual"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "mean",
+              "format": {
+                "unit": "bytes"
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "avg({otel_metric_name=\"container.memory.usage.total\", container_name=~\"songs-spring-manual\"})",
+                    "seriesNameFormat": ""
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "spring_cpu_auto": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "CPU usage (avg) — auto"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "mean",
+              "format": {
+                "unit": "decimal"
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "avg(rate({otel_metric_name=\"container.cpu.usage.total\", container_name=~\"songs-spring-auto\"}[$__interval]) / 1e9)",
+                    "seriesNameFormat": ""
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "spring_mem_auto": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Memory usage (avg) — auto"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "mean",
+              "format": {
+                "unit": "bytes"
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "avg({otel_metric_name=\"container.memory.usage.total\", container_name=~\"songs-spring-auto\"})",
+                    "seriesNameFormat": ""
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "express_cpu": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Container CPU usage",
+            "description": "CPU cores used (rate of container.cpu.usage.total, ns/s ÷ 1e9)"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "position": "bottom",
+                "mode": "table",
+                "values": [
+                  "mean",
+                  "max",
+                  "last"
+                ]
+              },
+              "visual": {
+                "display": "line",
+                "lineWidth": 1.5,
+                "palette": {
+                  "mode": "auto"
+                }
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "decimal"
+                },
+                "min": 0
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "avg by (container_name) (rate({otel_metric_name=\"container.cpu.usage.total\", container_name=~\"songs-express-.*\"}[$__interval]) / 1e9)",
+                    "seriesNameFormat": "{{container_name}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "express_mem": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Container memory usage"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "position": "bottom",
+                "mode": "table",
+                "values": [
+                  "mean",
+                  "max",
+                  "last"
+                ]
+              },
+              "visual": {
+                "display": "line",
+                "lineWidth": 1.5,
+                "palette": {
+                  "mode": "auto"
+                }
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "bytes"
+                },
+                "min": 0
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "avg by (container_name) ({otel_metric_name=\"container.memory.usage.total\", container_name=~\"songs-express-.*\"})",
+                    "seriesNameFormat": "{{container_name}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "express_cpu_uninstrumented": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "CPU usage (avg) — uninstrumented"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "mean",
+              "format": {
+                "unit": "decimal"
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "avg(rate({otel_metric_name=\"container.cpu.usage.total\", container_name=~\"songs-express-uninstrumented\"}[$__interval]) / 1e9)",
+                    "seriesNameFormat": ""
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "express_mem_uninstrumented": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Memory usage (avg) — uninstrumented"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "mean",
+              "format": {
+                "unit": "bytes"
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "avg({otel_metric_name=\"container.memory.usage.total\", container_name=~\"songs-express-uninstrumented\"})",
+                    "seriesNameFormat": ""
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "express_cpu_manual": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "CPU usage (avg) — manual"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "mean",
+              "format": {
+                "unit": "decimal"
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "avg(rate({otel_metric_name=\"container.cpu.usage.total\", container_name=~\"songs-express-manual\"}[$__interval]) / 1e9)",
+                    "seriesNameFormat": ""
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "express_mem_manual": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Memory usage (avg) — manual"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "mean",
+              "format": {
+                "unit": "bytes"
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "avg({otel_metric_name=\"container.memory.usage.total\", container_name=~\"songs-express-manual\"})",
+                    "seriesNameFormat": ""
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "express_cpu_auto": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "CPU usage (avg) — auto"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "mean",
+              "format": {
+                "unit": "decimal"
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "avg(rate({otel_metric_name=\"container.cpu.usage.total\", container_name=~\"songs-express-auto\"}[$__interval]) / 1e9)",
+                    "seriesNameFormat": ""
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "express_mem_auto": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Memory usage (avg) — auto"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "mean",
+              "format": {
+                "unit": "bytes"
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "avg({otel_metric_name=\"container.memory.usage.total\", container_name=~\"songs-express-auto\"})",
+                    "seriesNameFormat": ""
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "all_cpu": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "CPU usage — all variants (cores)",
+            "description": "CPU cores used (rate of container.cpu.usage.total, ns/s ÷ 1e9)"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "position": "bottom",
+                "mode": "table",
+                "values": [
+                  "mean",
+                  "max",
+                  "last"
+                ]
+              },
+              "visual": {
+                "display": "line",
+                "lineWidth": 1.5,
+                "palette": {
+                  "mode": "auto"
+                }
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "decimal"
+                },
+                "min": 0
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "avg by (container_name) (rate({otel_metric_name=\"container.cpu.usage.total\", container_name=~\"songs-(spring|express)-.*\"}[$__interval]) / 1e9)",
+                    "seriesNameFormat": "{{container_name}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "all_mem": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Memory usage — all variants"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "position": "bottom",
+                "mode": "table",
+                "values": [
+                  "mean",
+                  "max",
+                  "last"
+                ]
+              },
+              "visual": {
+                "display": "line",
+                "lineWidth": 1.5,
+                "palette": {
+                  "mode": "auto"
+                }
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "bytes"
+                },
+                "min": 0
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "avg by (container_name) ({otel_metric_name=\"container.memory.usage.total\", container_name=~\"songs-(spring|express)-.*\"})",
+                    "seriesNameFormat": "{{container_name}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "layouts": [
+      {
+        "kind": "Grid",
+        "spec": {
+          "display": {
+            "title": "Spring",
+            "collapse": {
+              "open": true
+            }
+          },
+          "items": [
+            {
+              "x": 0,
+              "y": 0,
+              "width": 12,
+              "height": 8,
+              "content": {
+                "$ref": "#/spec/panels/spring_cpu"
+              }
+            },
+            {
+              "x": 12,
+              "y": 0,
+              "width": 12,
+              "height": 8,
+              "content": {
+                "$ref": "#/spec/panels/spring_mem"
+              }
+            },
+            {
+              "x": 0,
+              "y": 8,
+              "width": 8,
+              "height": 4,
+              "content": {
+                "$ref": "#/spec/panels/spring_cpu_uninstrumented"
+              }
+            },
+            {
+              "x": 0,
+              "y": 12,
+              "width": 8,
+              "height": 4,
+              "content": {
+                "$ref": "#/spec/panels/spring_mem_uninstrumented"
+              }
+            },
+            {
+              "x": 8,
+              "y": 8,
+              "width": 8,
+              "height": 4,
+              "content": {
+                "$ref": "#/spec/panels/spring_cpu_manual"
+              }
+            },
+            {
+              "x": 8,
+              "y": 12,
+              "width": 8,
+              "height": 4,
+              "content": {
+                "$ref": "#/spec/panels/spring_mem_manual"
+              }
+            },
+            {
+              "x": 16,
+              "y": 8,
+              "width": 8,
+              "height": 4,
+              "content": {
+                "$ref": "#/spec/panels/spring_cpu_auto"
+              }
+            },
+            {
+              "x": 16,
+              "y": 12,
+              "width": 8,
+              "height": 4,
+              "content": {
+                "$ref": "#/spec/panels/spring_mem_auto"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "kind": "Grid",
+        "spec": {
+          "display": {
+            "title": "Express",
+            "collapse": {
+              "open": true
+            }
+          },
+          "items": [
+            {
+              "x": 0,
+              "y": 0,
+              "width": 12,
+              "height": 8,
+              "content": {
+                "$ref": "#/spec/panels/express_cpu"
+              }
+            },
+            {
+              "x": 12,
+              "y": 0,
+              "width": 12,
+              "height": 8,
+              "content": {
+                "$ref": "#/spec/panels/express_mem"
+              }
+            },
+            {
+              "x": 0,
+              "y": 8,
+              "width": 8,
+              "height": 4,
+              "content": {
+                "$ref": "#/spec/panels/express_cpu_uninstrumented"
+              }
+            },
+            {
+              "x": 0,
+              "y": 12,
+              "width": 8,
+              "height": 4,
+              "content": {
+                "$ref": "#/spec/panels/express_mem_uninstrumented"
+              }
+            },
+            {
+              "x": 8,
+              "y": 8,
+              "width": 8,
+              "height": 4,
+              "content": {
+                "$ref": "#/spec/panels/express_cpu_manual"
+              }
+            },
+            {
+              "x": 8,
+              "y": 12,
+              "width": 8,
+              "height": 4,
+              "content": {
+                "$ref": "#/spec/panels/express_mem_manual"
+              }
+            },
+            {
+              "x": 16,
+              "y": 8,
+              "width": 8,
+              "height": 4,
+              "content": {
+                "$ref": "#/spec/panels/express_cpu_auto"
+              }
+            },
+            {
+              "x": 16,
+              "y": 12,
+              "width": 8,
+              "height": 4,
+              "content": {
+                "$ref": "#/spec/panels/express_mem_auto"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "kind": "Grid",
+        "spec": {
+          "display": {
+            "title": "Overview — all 6 variants",
+            "collapse": {
+              "open": true
+            }
+          },
+          "items": [
+            {
+              "x": 0,
+              "y": 0,
+              "width": 12,
+              "height": 8,
+              "content": {
+                "$ref": "#/spec/panels/all_cpu"
+              }
+            },
+            {
+              "x": 12,
+              "y": 0,
+              "width": 12,
+              "height": 8,
+              "content": {
+                "$ref": "#/spec/panels/all_mem"
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,715 @@
+{
+  "apiVersion": "perses.dev/v1alpha1",
+  "kind": "PersesDashboard",
+  "metadata": {
+    "name": "k6-benchmark-four-golden-signals"
+  },
+  "spec": {
+    "display": {
+      "name": "k6 Benchmark — Four Golden Signals",
+      "description": "Four Golden Signals (latency, traffic, errors, saturation) from k6 benchmark metrics across all 6 service variants. k6 exports them through its OpenTelemetry output to the OTel Collector, which forwards them to Dash0."
+    },
+    "duration": "1h",
+    "variables": [
+      {
+        "kind": "ListVariable",
+        "spec": {
+          "name": "service",
+          "display": {
+            "name": "Service"
+          },
+          "allowAllValue": true,
+          "allowMultiple": true,
+          "customAllValue": "k6-.*",
+          "defaultValue": "$__all",
+          "plugin": {
+            "kind": "PrometheusLabelValuesVariable",
+            "spec": {
+              "labelName": "service_name",
+              "matchers": [
+                "{otel_metric_name=\"http_reqs\"}"
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "panels": {
+      "lat_pct": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Request duration — p95 & p99 by service",
+            "description": "SLO threshold: p95 < 2 s"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "position": "bottom",
+                "mode": "table",
+                "values": [
+                  "mean",
+                  "max",
+                  "last"
+                ]
+              },
+              "visual": {
+                "display": "line",
+                "lineWidth": 1.5,
+                "palette": {
+                  "mode": "auto"
+                }
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "milliseconds"
+                },
+                "min": 0
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "histogram_quantile(0.95, sum by (service_name) (rate({otel_metric_name=\"http_req_duration\", service_name=~\"$service\"}[$__interval])))",
+                    "seriesNameFormat": "{{service_name}} p95"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "histogram_quantile(0.99, sum by (service_name) (rate({otel_metric_name=\"http_req_duration\", service_name=~\"$service\"}[$__interval])))",
+                    "seriesNameFormat": "{{service_name}} p99"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "lat_avg": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Request duration — avg by service"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "position": "bottom",
+                "mode": "table",
+                "values": [
+                  "mean",
+                  "max",
+                  "last"
+                ]
+              },
+              "visual": {
+                "display": "line",
+                "lineWidth": 1.5,
+                "palette": {
+                  "mode": "auto"
+                }
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "milliseconds"
+                },
+                "min": 0
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "histogram_sum(sum by (service_name) (rate({otel_metric_name=\"http_req_duration\", service_name=~\"$service\"}[$__interval]))) / histogram_count(sum by (service_name) (rate({otel_metric_name=\"http_req_duration\", service_name=~\"$service\"}[$__interval])))",
+                    "seriesNameFormat": "{{service_name}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "ttfb": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Time to first byte — avg by service (http_req_waiting)"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "position": "bottom",
+                "mode": "table",
+                "values": [
+                  "mean",
+                  "max",
+                  "last"
+                ]
+              },
+              "visual": {
+                "display": "line",
+                "lineWidth": 1.5,
+                "palette": {
+                  "mode": "auto"
+                }
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "milliseconds"
+                },
+                "min": 0
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "histogram_sum(sum by (service_name) (rate({otel_metric_name=\"http_req_waiting\", service_name=~\"$service\"}[$__interval]))) / histogram_count(sum by (service_name) (rate({otel_metric_name=\"http_req_waiting\", service_name=~\"$service\"}[$__interval])))",
+                    "seriesNameFormat": "{{service_name}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "reqs": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Request rate by service"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "position": "bottom",
+                "mode": "table",
+                "values": [
+                  "mean",
+                  "max",
+                  "last"
+                ]
+              },
+              "visual": {
+                "display": "line",
+                "lineWidth": 1.5,
+                "palette": {
+                  "mode": "auto"
+                }
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "requests/sec"
+                },
+                "min": 0
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "sum by (service_name) (rate({otel_metric_name=\"http_reqs\", service_name=~\"$service\"}[$__interval]))",
+                    "seriesNameFormat": "{{service_name}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "vus": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Active virtual users by service"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "position": "bottom",
+                "mode": "table",
+                "values": [
+                  "mean",
+                  "max",
+                  "last"
+                ]
+              },
+              "visual": {
+                "display": "line",
+                "lineWidth": 1.5,
+                "palette": {
+                  "mode": "auto"
+                }
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "decimal"
+                },
+                "min": 0
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "avg by (service_name) ({otel_metric_name=\"vus\", service_name=~\"$service\"})",
+                    "seriesNameFormat": "{{service_name}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "err_rate": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "HTTP error rate by service",
+            "description": "SLO threshold: < 1%"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "position": "bottom",
+                "mode": "table",
+                "values": [
+                  "mean",
+                  "max",
+                  "last"
+                ]
+              },
+              "visual": {
+                "display": "line",
+                "lineWidth": 1.5,
+                "palette": {
+                  "mode": "auto"
+                }
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "percent"
+                },
+                "min": 0,
+                "max": 100
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "sum by (service_name) (rate({otel_metric_name=\"http_req_failed.occurred\", service_name=~\"$service\"}[$__interval])) / sum by (service_name) (rate({otel_metric_name=\"http_req_failed.total\", service_name=~\"$service\"}[$__interval])) * 100",
+                    "seriesNameFormat": "{{service_name}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "dropped": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Dropped iterations — rate by service"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "position": "bottom",
+                "mode": "table",
+                "values": [
+                  "mean",
+                  "max",
+                  "last"
+                ]
+              },
+              "visual": {
+                "display": "line",
+                "lineWidth": 1.5,
+                "palette": {
+                  "mode": "auto"
+                }
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "decimal"
+                },
+                "min": 0
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "sum by (service_name) (rate({otel_metric_name=\"dropped_iterations\", service_name=~\"$service\"}[$__interval]))",
+                    "seriesNameFormat": "{{service_name}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "vu_util": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "VU utilization by service — vus / vus_max",
+            "description": "Warning above 80%"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "position": "bottom",
+                "mode": "table",
+                "values": [
+                  "mean",
+                  "max",
+                  "last"
+                ]
+              },
+              "visual": {
+                "display": "line",
+                "lineWidth": 1.5,
+                "palette": {
+                  "mode": "auto"
+                }
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "percent"
+                },
+                "min": 0,
+                "max": 100
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "avg by (service_name) ({otel_metric_name=\"vus\", service_name=~\"$service\"}) / max by (service_name) ({otel_metric_name=\"vus_max\", service_name=~\"$service\"}) * 100",
+                    "seriesNameFormat": "{{service_name}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "vu_vs_max": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Active vs max VUs by service"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "position": "bottom",
+                "mode": "table",
+                "values": [
+                  "mean",
+                  "max",
+                  "last"
+                ]
+              },
+              "visual": {
+                "display": "line",
+                "lineWidth": 1.5,
+                "palette": {
+                  "mode": "auto"
+                }
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "decimal"
+                },
+                "min": 0
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "avg by (service_name) ({otel_metric_name=\"vus\", service_name=~\"$service\"})",
+                    "seriesNameFormat": "{{service_name}} active"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "max by (service_name) ({otel_metric_name=\"vus_max\", service_name=~\"$service\"})",
+                    "seriesNameFormat": "{{service_name}} max"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "throughput": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Data throughput by service"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "position": "bottom",
+                "mode": "table",
+                "values": [
+                  "mean",
+                  "max",
+                  "last"
+                ]
+              },
+              "visual": {
+                "display": "line",
+                "lineWidth": 1.5,
+                "palette": {
+                  "mode": "auto"
+                }
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "bytes/sec"
+                },
+                "min": 0
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "sum by (service_name) (rate({otel_metric_name=\"data_sent\", service_name=~\"$service\"}[$__interval]))",
+                    "seriesNameFormat": "{{service_name}} sent"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "sum by (service_name) (rate({otel_metric_name=\"data_received\", service_name=~\"$service\"}[$__interval]))",
+                    "seriesNameFormat": "{{service_name}} received"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "layouts": [
+      {
+        "kind": "Grid",
+        "spec": {
+          "display": {
+            "title": "Latency",
+            "collapse": {
+              "open": true
+            }
+          },
+          "items": [
+            {
+              "x": 0,
+              "y": 0,
+              "width": 12,
+              "height": 8,
+              "content": {
+                "$ref": "#/spec/panels/lat_pct"
+              }
+            },
+            {
+              "x": 12,
+              "y": 0,
+              "width": 12,
+              "height": 8,
+              "content": {
+                "$ref": "#/spec/panels/lat_avg"
+              }
+            },
+            {
+              "x": 0,
+              "y": 8,
+              "width": 24,
+              "height": 6,
+              "content": {
+                "$ref": "#/spec/panels/ttfb"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "kind": "Grid",
+        "spec": {
+          "display": {
+            "title": "Traffic",
+            "collapse": {
+              "open": true
+            }
+          },
+          "items": [
+            {
+              "x": 0,
+              "y": 0,
+              "width": 12,
+              "height": 8,
+              "content": {
+                "$ref": "#/spec/panels/reqs"
+              }
+            },
+            {
+              "x": 12,
+              "y": 0,
+              "width": 12,
+              "height": 8,
+              "content": {
+                "$ref": "#/spec/panels/vus"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "kind": "Grid",
+        "spec": {
+          "display": {
+            "title": "Errors",
+            "collapse": {
+              "open": true
+            }
+          },
+          "items": [
+            {
+              "x": 0,
+              "y": 0,
+              "width": 12,
+              "height": 8,
+              "content": {
+                "$ref": "#/spec/panels/err_rate"
+              }
+            },
+            {
+              "x": 12,
+              "y": 0,
+              "width": 12,
+              "height": 8,
+              "content": {
+                "$ref": "#/spec/panels/dropped"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "kind": "Grid",
+        "spec": {
+          "display": {
+            "title": "Saturation",
+            "collapse": {
+              "open": true
+            }
+          },
+          "items": [
+            {
+              "x": 0,
+              "y": 0,
+              "width": 12,
+              "height": 8,
+              "content": {
+                "$ref": "#/spec/panels/vu_util"
+              }
+            },
+            {
+              "x": 12,
+              "y": 0,
+              "width": 12,
+              "height": 8,
+              "content": {
+                "$ref": "#/spec/panels/vu_vs_max"
+              }
+            },
+            {
+              "x": 0,
+              "y": 8,
+              "width": 24,
+              "height": 6,
+              "content": {
+                "$ref": "#/spec/panels/throughput"
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

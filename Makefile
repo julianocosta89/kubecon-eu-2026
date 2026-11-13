@@ -29,7 +29,7 @@ help:
 	@echo "Weaver (semantic convention code generation):"
 	@echo "  make weaver                       Generate all artifacts (Java, JS, Markdown)"
 	@echo ""
-	@echo "Benchmark (requires k6 + OBSERVABILITY_BACKEND=datadog in .env):"
+	@echo "Benchmark (requires k6 + OBSERVABILITY_BACKEND=dash0 in .env):"
 	@echo "  make benchmark                         Run full benchmark (all 6 services)"
 	@echo "  make benchmark SERVICE=spring-auto     Run benchmark for a single service"
 	@echo "  make benchmark RATE=100                Requests/sec during steady-state (default: 400)"

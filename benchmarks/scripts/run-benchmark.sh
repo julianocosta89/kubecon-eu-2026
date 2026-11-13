@@ -62,11 +62,11 @@ if ! command -v k6 &> /dev/null; then
     exit 1
 fi
 
-# Ensure observability backend is set to datadog
-if [ "$OBSERVABILITY_BACKEND" != "datadog" ]; then
-    echo -e "${YELLOW}   OBSERVABILITY_BACKEND is not set to 'datadog'${NC}"
+# Ensure observability backend is set to dash0
+if [ "$OBSERVABILITY_BACKEND" != "dash0" ]; then
+    echo -e "${YELLOW}   OBSERVABILITY_BACKEND is not set to 'dash0'${NC}"
     echo -e "${YELLOW}   Current value: ${OBSERVABILITY_BACKEND:-not set}${NC}"
-    echo -e "${YELLOW}   Please set it in .env file or export OBSERVABILITY_BACKEND=datadog${NC}"
+    echo -e "${YELLOW}   Please set it in .env file or export OBSERVABILITY_BACKEND=dash0${NC}"
     read -p "Continue anyway? (y/N) " -n 1 -r
     echo
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
@@ -174,7 +174,7 @@ run_service_benchmark() {
         return 1
     fi
 
-    # Phase 1: Warmup (separate invocation — no OTel export, not sent to Datadog)
+    # Phase 1: Warmup (separate invocation — no OTel export, not sent to Dash0)
     echo -e "${BLUE} Running warmup (${WARMUP_DURATION})...${NC}"
     cd "$BENCHMARK_DIR"
     SERVICE_URL="http://localhost:${port}" \
@@ -185,7 +185,7 @@ run_service_benchmark() {
     STEADY_STATE_START_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
     echo "Steady-state start: ${STEADY_STATE_START_TIME}"
 
-    # Phase 2: Steady-state (metrics exported to OTel Collector / Datadog)
+    # Phase 2: Steady-state (metrics exported to OTel Collector / Dash0)
     echo -e "${BLUE} Running steady-state (${STEADY_STATE_DURATION} at ${RATE} rps)...${NC}"
     SERVICE_URL="http://localhost:${port}" \
     SERVICE_NAME="${service_name}" \
@@ -202,7 +202,7 @@ run_service_benchmark() {
     END_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
     echo "End time: ${END_TIME}"
 
-    # Save time range for Datadog metric correlation
+    # Save time range for Dash0 metric correlation
     # Use STEADY_STATE_START_TIME to exclude warmup when querying container metrics
     cat > "${RUN_DIR}/${service_name}-timerange.txt" <<EOF
 Service: ${service_name}
@@ -255,6 +255,6 @@ done
 echo ""
 echo "Next steps:"
 echo "1. Compare summaries: cat ${RUN_DIR}/*-summary.json | jq ."
-echo "2. Check Datadog Metrics Explorer for container CPU/memory using timerange files"
+echo "2. Check the Dash0 dashboards or Metrics Explorer for container CPU/memory using timerange files"
 echo "3. See benchmarks/README.md for detailed analysis instructions"
 echo "=========================================="
