@@ -241,14 +241,15 @@ Triggers on PRs to main branch. Uses path filtering to only test changed service
 - `src/manual-instrumentation/express-manual/**` -> Builds and tests songs-express-manual
 - `src/uninstrumented/spring-uninstrumented/**` -> Builds and tests songs-spring-uninstrumented
 - `src/uninstrumented/express-uninstrumented/**` -> Builds and tests songs-express-uninstrumented
-- `src/otel-collector/**` -> Builds and caches otel-collector
+- `src/otel-collector/**`, `compose.yaml` or this workflow -> Builds otel-collector, starts it with the Jaeger config and waits for its health check to pass
 
 **Integration Tests**:
 - Instrumented services: Starts with Docker Compose, sends test request, verifies traces in Jaeger with [check-jaeger-traces.sh](.github/scripts/check-jaeger-traces.sh). The script polls Jaeger's `/api/v3/traces` query API for up to 60 seconds, because Jaeger 2.22 removed the legacy `/api/traces` endpoint. On failure it prints the last response and the Docker Compose logs.
 - Uninstrumented services: Starts with Docker Compose, validates HTTP response only
+- On any failure, the job prints `docker compose ps -a` and the Docker Compose logs before cleanup, so a collector or database that never becomes healthy is visible in the job log
 
 **OTel Collector Caching**:
-- Collector image is cached based on hash of YAML and Dockerfile
+- Collector image is cached based on a hash of the YAML files and Dockerfile under `src/otel-collector/`; the key step fails if it finds no files, so a moved folder cannot silently produce a constant key and a stale image
 - Shared between integration test jobs to reduce build time
 
 ### Renovate Workflow ([renovate-daily.yml](.github/workflows/renovate-daily.yml))
