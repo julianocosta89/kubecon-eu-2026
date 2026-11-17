@@ -82,6 +82,8 @@ jobs:
               - 'src/uninstrumented/express-uninstrumented/**'
             otel-collector:
               - 'src/otel-collector/**'
+              - 'compose.yaml'
+              - '.github/workflows/build-test.yml'
 
   # =============================================================================
   # Build jobs
@@ -216,8 +218,15 @@ jobs:
       - name: Generate cache key
         id: cache-key
         run: |
+          set -euo pipefail
           # Create hash of collector definition files
-          CACHE_KEY=$(find otel-collector \( -name "*.yaml" -o -name "Dockerfile" \) -type f -exec sha256sum {} + | sha256sum | cut -d' ' -f1)
+          FILES=$(find src/otel-collector -type f \( -name "*.yaml" -o -name "Dockerfile" \) | sort)
+          if [ -z "$FILES" ]; then
+            echo "::error::No collector definition files found under src/otel-collector"
+            exit 1
+          fi
+          echo "Hashing:"; echo "$FILES"
+          CACHE_KEY=$(sha256sum $FILES | sha256sum | cut -d' ' -f1)
           echo "cache-key=otel-collector-$CACHE_KEY" >> $GITHUB_OUTPUT
 
       - name: Check cache for collector image
@@ -360,6 +369,25 @@ jobs:
           docker load -i otel-collector-image.tar
           echo "OpenTelemetry Collector image loaded"
 
+      - name: Start collector and wait for it to be healthy
+        run: docker compose --profile spring-auto up -d --no-build --wait --wait-timeout 120 otel-collector jaeger
+        env:
+          OBSERVABILITY_BACKEND: jaeger
+
+      - name: Show collector logs on failure
+        if: failure()
+        run: |
+          docker compose --profile spring-auto ps -a
+          docker compose --profile spring-auto logs --no-color otel-collector
+        env:
+          OBSERVABILITY_BACKEND: jaeger
+
+      - name: Cleanup
+        if: always()
+        run: docker compose --profile spring-auto down -v
+        env:
+          OBSERVABILITY_BACKEND: jaeger
+
   # =============================================================================
   # Integration tests for instrumented services (with Jaeger trace verification)
   # =============================================================================
@@ -418,6 +446,14 @@ jobs:
           echo "Sending test request..."
           curl -f http://localhost:8080/songs/Polly/Nirvana || exit 1
           .github/scripts/check-jaeger-traces.sh songs-spring-auto
+        env:
+          OBSERVABILITY_BACKEND: jaeger
+
+      - name: Show Docker Compose logs on failure
+        if: failure()
+        run: |
+          docker compose --profile spring-auto ps -a
+          docker compose --profile spring-auto logs --no-color
         env:
           OBSERVABILITY_BACKEND: jaeger
 
@@ -483,6 +519,14 @@ jobs:
         env:
           OBSERVABILITY_BACKEND: jaeger
 
+      - name: Show Docker Compose logs on failure
+        if: failure()
+        run: |
+          docker compose --profile spring-manual ps -a
+          docker compose --profile spring-manual logs --no-color
+        env:
+          OBSERVABILITY_BACKEND: jaeger
+
       - name: Cleanup
         if: always()
         run: docker compose --profile spring-manual down -v
@@ -542,6 +586,14 @@ jobs:
           echo "Sending test request..."
           curl -f http://localhost:3000/songs/Polly/Nirvana || exit 1
           .github/scripts/check-jaeger-traces.sh songs-express-auto
+        env:
+          OBSERVABILITY_BACKEND: jaeger
+
+      - name: Show Docker Compose logs on failure
+        if: failure()
+        run: |
+          docker compose --profile express-auto ps -a
+          docker compose --profile express-auto logs --no-color
         env:
           OBSERVABILITY_BACKEND: jaeger
 
@@ -607,6 +659,14 @@ jobs:
         env:
           OBSERVABILITY_BACKEND: jaeger
 
+      - name: Show Docker Compose logs on failure
+        if: failure()
+        run: |
+          docker compose --profile express-manual ps -a
+          docker compose --profile express-manual logs --no-color
+        env:
+          OBSERVABILITY_BACKEND: jaeger
+
       - name: Cleanup
         if: always()
         run: docker compose --profile express-manual down -v
@@ -638,6 +698,14 @@ jobs:
         env:
           OBSERVABILITY_BACKEND: jaeger
 
+      - name: Show Docker Compose logs on failure
+        if: failure()
+        run: |
+          docker compose --profile spring-uninstrumented ps -a
+          docker compose --profile spring-uninstrumented logs --no-color
+        env:
+          OBSERVABILITY_BACKEND: jaeger
+
       - name: Cleanup
         if: always()
         run: docker compose --profile spring-uninstrumented down -v
@@ -663,6 +731,14 @@ jobs:
           echo "Sending test request..."
           curl -f http://localhost:3002/songs/Polly/Nirvana || exit 1
           echo "Express uninstrumented service responded successfully!"
+        env:
+          OBSERVABILITY_BACKEND: jaeger
+
+      - name: Show Docker Compose logs on failure
+        if: failure()
+        run: |
+          docker compose --profile express-uninstrumented ps -a
+          docker compose --profile express-uninstrumented logs --no-color
         env:
           OBSERVABILITY_BACKEND: jaeger
 
