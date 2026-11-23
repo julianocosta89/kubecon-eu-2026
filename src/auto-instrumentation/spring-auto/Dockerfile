@@ -18,7 +18,7 @@ RUN java -Djarmode=tools -jar app.jar extract --layers --destination extracted
 # Runtime stage
 FROM eclipse-temurin:25.0.5_8-jre-alpine-3.23
 
-ARG OTEL_AGENT_VERSION=2.33.1
+ARG OTEL_AGENT_VERSION=2.34.0
 
 RUN addgroup --system app && adduser --system --ingroup app app
 WORKDIR /app
